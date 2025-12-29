@@ -1,5 +1,4 @@
-﻿using Alzaitu.Lacewing.Client;
-using Gum.Forms;
+﻿using Gum.Forms;
 using Gum.Forms.Controls;
 using Gum.Forms.DefaultVisuals.V3;
 using Microsoft.Xna.Framework;
@@ -9,6 +8,7 @@ using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
 using ReFMGame.GameHelper;
+using ReFMGame.Network;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -31,7 +31,7 @@ public class FMGame : Game
 
     public static bool Active { get; private set; }
 
-    public LacewingClient Client { get; private set; }
+    public NetworkClient Client { get; private set; }
 
     /**
     * <summary>Get the current FPS</summary>
@@ -132,11 +132,11 @@ public class FMGame : Game
         _graphics.PreferredBackBufferWidth = WindowSize.X;
         _graphics.PreferredBackBufferHeight = WindowSize.Y;
         _graphics.ApplyChanges();
-        if (Client != null && !Client.Disposed)
+        if (Client != null && Client.IsConnected)
         {
-            Client.Dispose();
+            Client.Disconnect();
         }
-        Client = new LacewingClient();
+        Client = new NetworkClient("127.0.0.1", 8080);
         if (!GumUI.IsInitialized)
         {
             GumUI.Initialize(this, DefaultVisualsVersion.V3);
@@ -184,6 +184,7 @@ public class FMGame : Game
         KeyboardExtended.Update();
         var keyboard = KeyboardExtended.GetState();
         Audio.Update();
+        Client.Update();
 
         if (DebugMode) {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))

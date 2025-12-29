@@ -10,6 +10,7 @@ using MonoGame.Extended.Screens;
 using MonoGameGum;
 using ReFMGame.Animations;
 using ReFMGame.GameHelper;
+using ReFMGame.Network;
 using System;
 using System.Diagnostics;
 using Timer = System.Timers.Timer;
@@ -120,41 +121,60 @@ public class Menu(FMGame game) : GameScreen(game)
         StaticOpacityTimer.AutoReset = !RareBG;
         StaticOpacityTimer.Enabled = !RareBG;
         base.Initialize();
-        game.Client.Event.ResponseConnect += Event_ResponseConnect;
-        game.Client.Event.ResponseSetName += Event_ResponseSetName;
-        game.Client.Event.TextMessage += Event_TextMessage;
-        game.Client.Event.NumberMessage += Event_NumberMessage;
-        game.Client.Connect("server1.dark-wire.com");
+        game.Client.Connected += Client_Connected;
+        game.Client.ConnectFailed += Client_ConnectFailed;
+        game.Client.NicknameUpdate += Client_NicknameUpdate;
+        game.Client.JoinedChannel += Client_JoinedChannel;
+        game.Client.ChannelTextReceived += Client_ChannelTextReceived;
+        game.Client.ChannelNumberReceived += Client_ChannelNumberReceived;
+        game.Client.Connect();
     }
 
-    private void Event_NumberMessage(object sender, Alzaitu.Lacewing.Client.Packet.EventData.EventNumberMessage e)
+    private void Client_ConnectFailed(string error)
     {
-        if (e.Type == Alzaitu.Lacewing.Client.Packet.EventData.MessageEventType.Peer && e.SubChannel == 202)
+        Debug.WriteLine($"Connection failed: {error}");
+    }
+
+    private void Client_ChannelNumberReceived(byte subchannel, string sender, int value)
+    {
+        Debug.WriteLine($"Channel Number - Subchannel: {subchannel}, Sender: {sender}, Number: {value}");
+    }
+
+    private void Client_ChannelTextReceived(byte subchannel, string sender, string text)
+    {
+        Debug.WriteLine($"Channel Text - Subchannel: {subchannel}, Sender: {sender}, Text: {text}");
+    }
+
+    private void Client_JoinedChannel(Channel channel, string error)
+    {
+        if(error == null)
         {
-            Debug.WriteLine($"Received number: {e.Message}");
+            Debug.WriteLine($"Joined channel: {channel.Name}");
+            game.Client.SendChannelText(201, "Hello from C# client!", true);
+            game.Client.SendChannelNumber(202, 42);
         }
-        if (e.Blasted)
+        else
         {
-            Debug.WriteLine($"Channel: {e.SubChannel}; Blasted number: {e.Message}");
+            Debug.WriteLine($"Failed to join channel: {error}");
         }
     }
 
-    private void Event_TextMessage(object sender, Alzaitu.Lacewing.Client.Packet.EventData.EventTextMessage e)
+    private void Client_NicknameUpdate(bool success, string error)
     {
-        if(e.Type == Alzaitu.Lacewing.Client.Packet.EventData.MessageEventType.Peer && e.SubChannel == 201)
+        if (success)
         {
-            Debug.WriteLine($"Received text: {e.Message}");
+            Debug.WriteLine("Nickname set successfully.");
+            game.Client.JoinChannel("asd");
+        }
+        else
+        {
+            Debug.WriteLine($"Failed to set nickname: {error}");
         }
     }
 
-    private void Event_ResponseSetName(object sender, Alzaitu.Lacewing.Client.Packet.EventData.EventResponseSetName e)
+    private void Client_Connected()
     {
-        game.Client.JoinChannel("FMchannel#asd", true);
-    }
-
-    private void Event_ResponseConnect(object sender, Alzaitu.Lacewing.Client.Packet.EventData.EventResponseConnect e)
-    {
-        game.Client.SetName("FMTester#csharp");
+        game.Client.SetNickname("FMTester#csharp");
     }
 
     public override void LoadContent()
@@ -191,9 +211,10 @@ public class Menu(FMGame game) : GameScreen(game)
 		SpriteTimer?.Dispose();
         StaticOpacityTimer.Dispose();
         game.Client.Disconnect();
-        game.Client.Event.ResponseConnect -= Event_ResponseConnect;
-        game.Client.Event.ResponseSetName -= Event_ResponseSetName;
-        game.Client.Event.TextMessage -= Event_TextMessage;
-        game.Client.Event.NumberMessage -= Event_NumberMessage;
+        game.Client.Connected -= Client_Connected;
+        game.Client.NicknameUpdate -= Client_NicknameUpdate;
+        game.Client.JoinedChannel -= Client_JoinedChannel;
+        game.Client.ChannelTextReceived -= Client_ChannelTextReceived;
+        game.Client.ChannelNumberReceived -= Client_ChannelNumberReceived;
     }
 }
