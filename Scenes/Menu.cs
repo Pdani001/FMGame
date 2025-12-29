@@ -174,7 +174,7 @@ public class Menu(FMGame game) : GameScreen(game)
 
     private void Client_Connected()
     {
-        game.Client.SetNickname("FMTester#csharp");
+        game.Client.SetNickname("FMTester");
     }
 
     public override void LoadContent()

@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 
 namespace ReFMGame.Network
 {
     public class NetworkClient
     {
-        private readonly WsGameClient _client;
+        private readonly TcpGameClient _client;
         private readonly ConcurrentQueue<Message> _incoming = new();
+
+        public Channel Channel { get; private set; }
 
         public bool IsConnected => _client.IsConnected;
 
         // Events for game layer
         public event Action Connected;
         public event Action<string> ConnectFailed;
+        public event Action<string> Error;
         public event Action Disconnected;
         public event Action<Channel[]> ChannelListReceived;
         public event Action<Channel, string> JoinedChannel;
@@ -29,15 +33,15 @@ namespace ReFMGame.Network
 
         public NetworkClient(string host, int port)
         {
-            _client = new WsGameClient(host, port, _incoming);
+            _client = new TcpGameClient(host, port, _incoming);
         }
 
         // ---- Connection ----
 
         public void Connect()
         {
-            Debug.WriteLine("NetworkClient: Attempting to connect...");
             if (IsConnected) return;
+            Debug.WriteLine("NetworkClient: Attempting to connect...");
             if (!_client.ConnectAsync())
             {
                 ConnectFailed?.Invoke(_client.ErrorMessage);
@@ -47,6 +51,7 @@ namespace ReFMGame.Network
         {
             if(!IsConnected) return;
             _client.DisconnectAsync();
+            Channel = null;
         }
 
         // ---- Identity ----
@@ -111,7 +116,13 @@ namespace ReFMGame.Network
         private void Send(object payload)
         {
             var json = JsonSerializer.Serialize(payload);
-            _client.SendTextAsync(json);
+            var data = Encoding.UTF8.GetBytes(json);
+
+            var packet = new byte[data.Length + 4];
+            BitConverter.GetBytes(data.Length).CopyTo(packet, 0);
+            data.CopyTo(packet, 4);
+
+            _client.SendAsync(packet);
         }
 
         // ---- Call from MonoGame Update() ----
@@ -120,50 +131,56 @@ namespace ReFMGame.Network
         {
             while (_incoming.TryDequeue(out var msg))
             {
-                switch (msg.Type)
+                switch (msg.type)
                 {
+                    case "error":
+                        Error?.Invoke(msg.error);
+                        break;
+
                     case "connected":
                         Connected?.Invoke();
                         break;
 
                     case "channel_joined":
-                        JoinedChannel?.Invoke(msg.Channel, msg.Error);
+                        Channel = msg.channel;
+                        JoinedChannel?.Invoke(msg.channel, msg.error);
                         break;
 
                     case "channel_left":
-                        LeftChannel?.Invoke(msg.ChannelName);
+                        Channel = null;
+                        LeftChannel?.Invoke(msg.channelname);
                         break;
 
                     case "channel_list":
-                        ChannelListReceived?.Invoke(msg.Channels);
+                        ChannelListReceived?.Invoke(msg.channels);
                         break;
 
                     case "channel_user_joined":
-                        ChannelUserJoined?.Invoke(msg.Client);
+                        ChannelUserJoined?.Invoke(msg.client);
                         break;
 
                     case "channel_user_left":
-                        ChannelUserLeft?.Invoke(msg.Client);
+                        ChannelUserLeft?.Invoke(msg.client);
                         break;
 
                     case "channel_text":
-                        ChannelTextReceived?.Invoke(msg.SubChannel, msg.Client, msg.Text);
+                        ChannelTextReceived?.Invoke(msg.subchannel, msg.client, msg.text);
                         break;
 
                     case "channel_number":
-                        ChannelNumberReceived?.Invoke(msg.SubChannel, msg.Client, msg.Value ?? 0);
+                        ChannelNumberReceived?.Invoke(msg.subchannel, msg.client, msg.value ?? 0);
                         break;
 
                     case "private_text":
-                        PrivateTextReceived?.Invoke(msg.SubChannel, msg.Client, msg.Text);
+                        PrivateTextReceived?.Invoke(msg.subchannel, msg.client, msg.text);
                         break;
 
                     case "private_number":
-                        PrivateNumberReceived?.Invoke(msg.SubChannel, msg.Client, msg.Value ?? 0);
+                        PrivateNumberReceived?.Invoke(msg.subchannel, msg.client, msg.value ?? 0);
                         break;
 
                     case "set_nick":
-                        NicknameUpdate?.Invoke(msg.Success ?? false, msg.Error);
+                        NicknameUpdate?.Invoke(msg.success ?? false, msg.error);
                         break;
                 }
             }
