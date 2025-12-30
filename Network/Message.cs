@@ -5,7 +5,7 @@
         public string Type { get; set; }
         public byte SubChannel { get; set; }
         public string Client { get; set; }
-        public bool IsDev { get; set; }
+        public bool IsAdmin { get; set; }
         public string ChannelName { get; set; }
         public Channel Channel { get; set; }
         public string Text { get; set; }

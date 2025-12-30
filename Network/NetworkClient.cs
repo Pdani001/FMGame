@@ -54,7 +54,7 @@ namespace ReFMGame.Network
         public void Disconnect()
         {
             if(!IsConnected) return;
-            _client.DisconnectAsync();
+            _client.Dispose();
             Channel = null;
         }
 

@@ -156,8 +156,17 @@ public class FMGame : Game
         }
     }
 
+    private bool IsRestart = false;
+
     protected override void LoadContent()
     {
+        if (IsRestart)
+        {
+            _screenManager.ClearScreens();
+            _screenManager.ShowScreen(new Scenes.Splash(this));
+            return;
+        }
+        IsRestart = true;
         SpriteBatch = new SpriteBatch(GraphicsDevice);
         RenderTarget = new RenderTarget2D(GraphicsDevice, WindowSize.X, WindowSize.Y);
         RenderTargetDestination = GetRenderTargetDestination(WindowSize, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
