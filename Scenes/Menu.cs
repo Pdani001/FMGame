@@ -127,7 +127,24 @@ public class Menu(FMGame game) : GameScreen(game)
         game.Client.JoinedChannel += Client_JoinedChannel;
         game.Client.ChannelTextReceived += Client_ChannelTextReceived;
         game.Client.ChannelNumberReceived += Client_ChannelNumberReceived;
-        game.Client.Connect();
+        game.Client.PrivateNumberReceived += Client_PrivateNumberReceived;
+        if (!game.Client.IsConnected)
+            game.Client.Connect();
+        else
+        {
+            game.Client.LeaveChannel();
+        }
+    }
+
+    private void Client_PrivateNumberReceived(byte subchannel, string sender, int number)
+    {
+        Debug.WriteLine($"Private Number - Subchannel: {subchannel}, Sender: {sender}, Number: {number}");
+#if DEBUG
+        if(sender == "FMServer")
+        {
+            game.Client.SetNickname("Pdani");
+        }
+#endif
     }
 
     private void Client_ConnectFailed(string error)
@@ -174,7 +191,12 @@ public class Menu(FMGame game) : GameScreen(game)
 
     private void Client_Connected()
     {
-        game.Client.SetNickname("FMTester");
+#if DEBUG
+        Debug.WriteLine("Connected to server in DEBUG mode.");
+        game.Client.SendServerSecret("ReFMDevSecret");
+#else
+        game.Client.SetNickname($"Player{rng.Next(1000,9999)}");
+#endif
     }
 
     public override void LoadContent()
@@ -210,7 +232,6 @@ public class Menu(FMGame game) : GameScreen(game)
         BGOpacityTimer?.Dispose();
 		SpriteTimer?.Dispose();
         StaticOpacityTimer.Dispose();
-        game.Client.Disconnect();
         game.Client.Connected -= Client_Connected;
         game.Client.NicknameUpdate -= Client_NicknameUpdate;
         game.Client.JoinedChannel -= Client_JoinedChannel;

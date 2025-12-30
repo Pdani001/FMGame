@@ -33,9 +33,14 @@ namespace ReFMGame.Network
             Debug.WriteLine("TCP disconnected");
             _incoming.Clear();
             if(ErrorMessage != string.Empty)
-                _incoming.Enqueue(new Message { type = "error", error = ErrorMessage });
-            _incoming.Enqueue(new Message { type = "disconnected" });
+                _incoming.Enqueue(new Message { Type = "error", Error = ErrorMessage });
+            _incoming.Enqueue(new Message { Type = "disconnected" });
         }
+
+        private static JsonSerializerOptions JsonSerializerOptions => new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
         {
@@ -54,12 +59,12 @@ namespace ReFMGame.Network
                     return;
 
                 var jsonBytes = _buffer.GetBuffer().AsSpan(4, length);
-                var str = System.Text.Encoding.Default.GetString(jsonBytes);
-                Debug.WriteLine($"Valid message: {str}");
-                var msg = JsonSerializer.Deserialize<Message>(jsonBytes);
-
-
-                _incoming.Enqueue(msg);
+                try {
+                    var msg = JsonSerializer.Deserialize<Message>(jsonBytes, JsonSerializerOptions);
+                    var str = System.Text.Encoding.Default.GetString(jsonBytes);
+                    Debug.WriteLine($"Valid message: {str}");
+                    _incoming.Enqueue(msg);
+                } catch (JsonException) { }
 
                 var remaining = _buffer.Length - (length + 4);
                 var temp = new byte[remaining];

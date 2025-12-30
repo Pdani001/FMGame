@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -12,6 +13,9 @@ namespace ReFMGame.Network
         private readonly ConcurrentQueue<Message> _incoming = new();
 
         public Channel Channel { get; private set; }
+
+        private readonly string Secret = "[9edp!J3qWd4)XWtW#sa@s@>PJaXEW]Ns0FzYi5{WEA4pfCjgbeEU3+exR)+ww2(";
+        private string Session { get; set; }
 
         public bool IsConnected => _client.IsConnected;
 
@@ -58,7 +62,7 @@ namespace ReFMGame.Network
 
         public void SetNickname(string nick)
         {
-            Send(new { type = "set_nick", nick });
+            Send(new { Session, type = "set_nick", nick });
         }
 
         // ---- Channels ----
@@ -67,6 +71,7 @@ namespace ReFMGame.Network
         {
             Send(new
             {
+                Session,
                 type = "create_channel",
                 channel = name,
                 hidden,
@@ -76,39 +81,44 @@ namespace ReFMGame.Network
 
         public void JoinChannel(string name, bool hidden = false, bool autoClose = false)
         {
-            Send(new { type = "join_channel", channel = name, hidden, autoClose });
+            Send(new { Session, type = "join_channel", channel = name, hidden, autoClose });
         }
 
         public void LeaveChannel()
         {
-            Send(new { type = "leave_channel" });
+            Send(new { Session, type = "leave_channel" });
         }
 
         public void RequestChannelList()
         {
-            Send(new { type = "list_channels" });
+            Send(new { Session, type = "list_channels" });
         }
 
         // ---- Messaging ----
 
         public void SendChannelText(byte subchannel, string text, bool echo = false)
         {
-            Send(new { subchannel, type = "channel_text", text, echo });
+            Send(new { Session, subchannel, type = "channel_text", text, echo });
         }
 
         public void SendChannelNumber(byte subchannel, int value, bool echo = false)
         {
-            Send(new { subchannel, type = "channel_number", value, echo });
+            Send(new { Session, subchannel, type = "channel_number", value, echo });
         }
 
         public void SendPrivateText(byte subchannel, string to, string text)
         {
-            Send(new { subchannel, type = "private_text", to, text });
+            Send(new { Session, subchannel, type = "private_text", to, text });
         }
 
         public void SendPrivateNumber(byte subchannel, string to, int value)
         {
-            Send(new { subchannel, type = "private_number", to, value });
+            Send(new { Session, subchannel, type = "private_number", to, value });
+        }
+
+        public void SendServerSecret(string secret)
+        {
+            Send(new { Session, type = "server_secret", text = secret });
         }
 
         // ---- Internal Send ----
@@ -131,59 +141,102 @@ namespace ReFMGame.Network
         {
             while (_incoming.TryDequeue(out var msg))
             {
-                switch (msg.type)
+                switch (msg.Type)
                 {
+                    case "auth":
+                        Session = msg.Text;
+                        break;
+
+                    case "challenge":
+                        Debug.WriteLine("NetworkClient: Received challenge, sending auth...");
+                        using (SHA256 sha256Hash = SHA256.Create())
+                        {
+                            string hash = GetHash(sha256Hash, msg.Text+Secret);
+                            Send(new { type = "auth", text = hash });
+                            Debug.WriteLine("NetworkClient: Sent auth.");
+                        }
+                        break;
+
                     case "error":
-                        Error?.Invoke(msg.error);
+                        Error?.Invoke(msg.Error);
                         break;
 
                     case "connected":
                         Connected?.Invoke();
                         break;
 
+                    case "disconnected":
+                        Disconnected?.Invoke();
+                        break;
+
                     case "channel_joined":
-                        Channel = msg.channel;
-                        JoinedChannel?.Invoke(msg.channel, msg.error);
+                        Channel = msg.Channel;
+                        JoinedChannel?.Invoke(msg.Channel, msg.Error);
                         break;
 
                     case "channel_left":
                         Channel = null;
-                        LeftChannel?.Invoke(msg.channelname);
+                        LeftChannel?.Invoke(msg.ChannelName);
                         break;
 
                     case "channel_list":
-                        ChannelListReceived?.Invoke(msg.channels);
+                        ChannelListReceived?.Invoke(msg.Channels);
                         break;
 
                     case "channel_user_joined":
-                        ChannelUserJoined?.Invoke(msg.client);
+                        ChannelUserJoined?.Invoke(msg.Client);
                         break;
 
                     case "channel_user_left":
-                        ChannelUserLeft?.Invoke(msg.client);
+                        ChannelUserLeft?.Invoke(msg.Client);
                         break;
 
                     case "channel_text":
-                        ChannelTextReceived?.Invoke(msg.subchannel, msg.client, msg.text);
+                        ChannelTextReceived?.Invoke(msg.SubChannel, msg.Client, msg.Text);
                         break;
 
                     case "channel_number":
-                        ChannelNumberReceived?.Invoke(msg.subchannel, msg.client, msg.value ?? 0);
+                        ChannelNumberReceived?.Invoke(msg.SubChannel, msg.Client, msg.Value ?? 0);
                         break;
 
                     case "private_text":
-                        PrivateTextReceived?.Invoke(msg.subchannel, msg.client, msg.text);
+                        PrivateTextReceived?.Invoke(msg.SubChannel, msg.Client, msg.Text);
                         break;
 
                     case "private_number":
-                        PrivateNumberReceived?.Invoke(msg.subchannel, msg.client, msg.value ?? 0);
+                        PrivateNumberReceived?.Invoke(msg.SubChannel, msg.Client, msg.Value ?? 0);
                         break;
 
                     case "set_nick":
-                        NicknameUpdate?.Invoke(msg.success ?? false, msg.error);
+                        NicknameUpdate?.Invoke(msg.Success ?? false, msg.Error);
+                        break;
+
+                    case "server_secret":
+                        PrivateNumberReceived?.Invoke(0, "FMServer", msg.Success ?? false ? 1 : 0);
                         break;
                 }
             }
+        }
+
+        private static string GetHash(HashAlgorithm hashAlgorithm, string input)
+        {
+
+            // Convert the input string to a byte array and compute the hash.
+            byte[] data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+            // Create a new Stringbuilder to collect the bytes
+            // and create a string.
+            var sBuilder = new StringBuilder();
+
+            // Loop through each byte of the hashed data
+            // and format each one as a hexadecimal string.
+            for (int i = 0; i < data.Length; i++)
+            {
+                sBuilder.Append(data[i].ToString("x2"));
+            }
+
+            // Return the hexadecimal string.
+            return sBuilder.ToString();
         }
     }
 }
