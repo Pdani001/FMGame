@@ -74,7 +74,12 @@ public class Menu(FMGame game) : GameScreen(game)
             ScreenManager.ReplaceScreen(new Loading(game));
             //ScreenManager.ReplaceScreen(new NextDay(game, game.GetScreenshot()));
         }
-
+#if DEBUG
+        if (KeyboardExtended.GetState().WasKeyPressed(Keys.S))
+        {
+            ScreenManager.ReplaceScreen(new StaticScene(game));
+        }
+#endif
     }
 
     private bool RareBG = false;

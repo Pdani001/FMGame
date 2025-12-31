@@ -4,6 +4,7 @@ using MonoGame.Extended.Screens;
 using ReFMGame.Animations;
 using ReFMGame.GameHelper;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReFMGame.Scenes;
@@ -25,7 +26,9 @@ public class Loading(FMGame game) : GameScreen(game)
 		animation.Animate(gameTime);
 	}
 
-	public override void LoadContent()
+    CancellationTokenSource source = new();
+
+    public override void LoadContent()
 	{
         base.LoadContent();
         spinner = Content.Load<Texture2D>("fm-spinner");
@@ -36,11 +39,22 @@ public class Loading(FMGame game) : GameScreen(game)
             office.PreLoad(delegate
             {
                 Debug.WriteLine("Office preload complete");
-                Task.Delay(1000).ContinueWith(t =>
+                Task.Delay(1000).WaitAsync(source.Token).ContinueWith(t =>
                 {
+                    if(source.IsCancellationRequested)
+                    {
+                        Debug.WriteLine("Loading screen task cancelled!");
+                        return;
+                    }
                     ScreenManager.ReplaceScreen(office);
                 });
             });
         });
 	}
+
+    public override void UnloadContent()
+    {
+        base.UnloadContent();
+        source.Cancel();
+    }
 }

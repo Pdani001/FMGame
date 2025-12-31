@@ -5,16 +5,15 @@ using MonoGame.Extended.Screens;
 using ReFMGame.Animations;
 using ReFMGame.Animations.Jumpscare;
 using ReFMGame.GameHelper;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReFMGame.Scenes;
-public class FreddyScene(FMGame game) : GameScreen(game)
+public class StaticScene(FMGame game) : GameScreen(game)
 {
-	private TextureAnimation freddy;
     private TextureAnimation blip;
     private TextureAnimation staticAnim;
-    private SoundEffect scream;
     private SoundEffect staticSound;
 
     public override void Draw(GameTime gameTime)
@@ -22,24 +21,16 @@ public class FreddyScene(FMGame game) : GameScreen(game)
         GraphicsDevice.SetRenderTarget(game.RenderTarget);
         GraphicsDevice.Clear(Color.Black);
         game.SpriteBatch.Begin();
-        if (freddy.Running)
+        if (blip.Running)
         {
-            game.SpriteBatch.Draw(freddy[freddy.Index], Vector2.Zero, null, Color.White);
+            game.SpriteBatch.Draw(blip[blip.Index], Vector2.Zero, null, Color.White);
         }
-        else
-        {
-            if (blip.Running)
-            {
-                game.SpriteBatch.Draw(blip[blip.Index], Vector2.Zero, null, Color.White);
-            }
-            game.SpriteBatch.Draw(staticAnim[staticAnim.Index], Vector2.Zero, null, Color.White);
-        }
+        game.SpriteBatch.Draw(staticAnim[staticAnim.Index], Vector2.Zero, null, Color.White);
         game.SpriteBatch.End();
     }
 
 	public override void Update(GameTime gameTime)
 	{
-		freddy.Animate(gameTime);
 		blip.Animate(gameTime);
 		staticAnim.Animate(gameTime);
     }
@@ -49,21 +40,15 @@ public class FreddyScene(FMGame game) : GameScreen(game)
     public override void LoadContent()
 	{
         base.LoadContent();
-        freddy = new JumpFreddyNopower(Content);
-        scream = Content.Load<SoundEffect>("jumpscare/xscream");
         staticSound = Content.Load<SoundEffect>("static/static");
-        freddy.AnimationFinished += delegate
-        {
-            game.Audio.StopAll();
-            game.Audio.Play(staticSound);
-        };
         blip = new CamBlip(Content);
         staticAnim = new StaticAnim(Content);
-        freddy.Reset();
-        game.Audio.Play(scream);
-        Task.Delay(12000).WaitAsync(source.Token).ContinueWith(t => {
+        game.Audio.StopAll();
+        game.Audio.Play(staticSound);
+        Task.Delay(10000).WaitAsync(source.Token).ContinueWith(t => {
             if (source.IsCancellationRequested)
             {
+                Debug.WriteLine("GameOver screen task cancelled!");
                 return;
             }
             ScreenManager.ReplaceScreen(new GameOver(game, game.GetScreenshot()));
