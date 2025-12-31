@@ -136,7 +136,7 @@ public class FMGame : Game
         {
             Client.Disconnect();
         }
-        Client = new NetworkClient("142.132.195.36", 6121);
+        Client = new NetworkClient("142.132.195.36", 7121);
         if (!GumUI.IsInitialized)
         {
             GumUI.Initialize(this, DefaultVisualsVersion.V3);
