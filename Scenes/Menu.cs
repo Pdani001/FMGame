@@ -123,30 +123,9 @@ public class Menu(FMGame game) : GameScreen(game)
         base.Initialize();
     }
 
-    private void Client_PrivateNumberReceived(byte subchannel, string sender, int number)
-    {
-        Debug.WriteLine($"Private Number - Subchannel: {subchannel}, Sender: {sender}, Number: {number}");
-#if DEBUG
-        if(sender == "FMServer")
-        {
-            game.Client.SetNickname("Pdani");
-        }
-#endif
-    }
-
     private void Client_ConnectFailed(string error)
     {
         Debug.WriteLine($"Connection failed: {error}");
-    }
-
-    private void Client_ChannelNumberReceived(byte subchannel, string sender, int value)
-    {
-        Debug.WriteLine($"Channel Number - Subchannel: {subchannel}, Sender: {sender}, Number: {value}");
-    }
-
-    private void Client_ChannelTextReceived(byte subchannel, string sender, string text)
-    {
-        Debug.WriteLine($"Channel Text - Subchannel: {subchannel}, Sender: {sender}, Text: {text}");
     }
 
     private void Client_JoinedChannel(Channel channel, string error)
@@ -154,8 +133,6 @@ public class Menu(FMGame game) : GameScreen(game)
         if(error == null)
         {
             Debug.WriteLine($"Joined channel: {channel.Name}");
-            game.Client.SendChannelText(201, "Hello from C# client!", true);
-            game.Client.SendChannelNumber(202, 42);
         }
         else
         {
@@ -182,7 +159,7 @@ public class Menu(FMGame game) : GameScreen(game)
         Debug.WriteLine("Connected to server in DEBUG mode.");
         game.Client.SendServerSecret(Environment.GetEnvironmentVariable("SERVER_SECRET") ?? "");
 #else
-        game.Client.SetNickname($"Player{rng.Next(1000,9999)}");
+        game.Client.SetNickname($"Player{rng.Next(100,9999)}");
 #endif
     }
 
@@ -192,15 +169,16 @@ public class Menu(FMGame game) : GameScreen(game)
         game.Client.ConnectFailed += Client_ConnectFailed;
         game.Client.NicknameUpdate += Client_NicknameUpdate;
         game.Client.JoinedChannel += Client_JoinedChannel;
-        game.Client.ChannelTextReceived += Client_ChannelTextReceived;
-        game.Client.ChannelNumberReceived += Client_ChannelNumberReceived;
-        game.Client.PrivateNumberReceived += Client_PrivateNumberReceived;
-        if (!game.Client.IsConnected)
-            game.Client.Connect();
-        else
-        {
-            game.Client.LeaveChannel();
-        }
+#if DEBUG
+        game.Client.ServerSecretAccepted += Client_ServerSecretAccepted;
+#endif
+
+        //if (!game.Client.IsConnected)
+        //    game.Client.Connect();
+        //else
+        //{
+        //    game.Client.LeaveChannel();
+        //}
         game.Audio.StopAll();
         bmfont = Content.Load<BitmapFont>("font/b_volter32");
         logo = Content.Load<Texture2D>("menu/logo");
@@ -224,6 +202,13 @@ public class Menu(FMGame game) : GameScreen(game)
         base.LoadContent();
     }
 
+#if DEBUG
+    private void Client_ServerSecretAccepted()
+    {
+        game.Client.SetNickname(Environment.GetEnvironmentVariable("NICKNAME") ?? $"Player{rng.Next(100, 9999)}");
+    }
+#endif
+
     public override void Dispose()
     {
         base.Dispose();
@@ -235,7 +220,8 @@ public class Menu(FMGame game) : GameScreen(game)
         game.Client.Connected -= Client_Connected;
         game.Client.NicknameUpdate -= Client_NicknameUpdate;
         game.Client.JoinedChannel -= Client_JoinedChannel;
-        game.Client.ChannelTextReceived -= Client_ChannelTextReceived;
-        game.Client.ChannelNumberReceived -= Client_ChannelNumberReceived;
+#if DEBUG
+        game.Client.ServerSecretAccepted -= Client_ServerSecretAccepted;
+#endif
     }
 }

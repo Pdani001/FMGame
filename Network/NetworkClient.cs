@@ -19,7 +19,10 @@ namespace ReFMGame.Network
 
         public bool IsConnected => _client.IsConnected;
 
+        long lastServerTick;
+
         // Events for game layer
+        public event Action ServerSecretAccepted;
         public event Action Connected;
         public event Action<string> ConnectFailed;
         public event Action<string> Error;
@@ -29,10 +32,7 @@ namespace ReFMGame.Network
         public event Action<string> LeftChannel;
         public event Action<string> ChannelUserJoined;
         public event Action<string> ChannelUserLeft;
-        public event Action<byte, string, string> ChannelTextReceived;
-        public event Action<byte, string, int> ChannelNumberReceived;
-        public event Action<byte, string, string> PrivateTextReceived;
-        public event Action<byte, string, int> PrivateNumberReceived;
+        public event Action<string, string> ChatMessageReceived;
         public event Action<bool, string> NicknameUpdate;
 
         public NetworkClient(string host, int port)
@@ -96,24 +96,9 @@ namespace ReFMGame.Network
 
         // ---- Messaging ----
 
-        public void SendChannelText(byte subchannel, string text, bool echo = false)
+        public void SendMessage(string text, bool echo = false)
         {
-            Send(new { Session, subchannel, type = "channel_text", text, echo });
-        }
-
-        public void SendChannelNumber(byte subchannel, int value, bool echo = false)
-        {
-            Send(new { Session, subchannel, type = "channel_number", value, echo });
-        }
-
-        public void SendPrivateText(byte subchannel, string to, string text)
-        {
-            Send(new { Session, subchannel, type = "private_text", to, text });
-        }
-
-        public void SendPrivateNumber(byte subchannel, string to, int value)
-        {
-            Send(new { Session, subchannel, type = "private_number", to, value });
+            Send(new { Session, type = "chat", text, echo });
         }
 
         public void SendServerSecret(string secret)
@@ -191,20 +176,8 @@ namespace ReFMGame.Network
                         ChannelUserLeft?.Invoke(msg.Client);
                         break;
 
-                    case "channel_text":
-                        ChannelTextReceived?.Invoke(msg.SubChannel, msg.Client, msg.Text);
-                        break;
-
-                    case "channel_number":
-                        ChannelNumberReceived?.Invoke(msg.SubChannel, msg.Client, msg.Value ?? 0);
-                        break;
-
-                    case "private_text":
-                        PrivateTextReceived?.Invoke(msg.SubChannel, msg.Client, msg.Text);
-                        break;
-
-                    case "private_number":
-                        PrivateNumberReceived?.Invoke(msg.SubChannel, msg.Client, msg.Value ?? 0);
+                    case "chat":
+                        ChatMessageReceived?.Invoke(msg.Client, msg.Text);
                         break;
 
                     case "set_nick":
@@ -212,7 +185,7 @@ namespace ReFMGame.Network
                         break;
 
                     case "server_secret":
-                        PrivateNumberReceived?.Invoke(0, "FMServer", msg.Success ?? false ? 1 : 0);
+                        ServerSecretAccepted?.Invoke();
                         break;
                 }
             }

@@ -2,11 +2,13 @@
 using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ReFMGame.GameHelper;
 public class AudioController : IDisposable
 {
     private readonly List<SoundEffectInstance> _activeSoundEffectInstances;
+    private readonly Dictionary<string, SoundEffectInstance> _uniqueSoundEffectInstances;
     private float _previousSoundEffectVolume;
     public bool IsMuted { get; private set; }
     public float Volume
@@ -34,13 +36,26 @@ public class AudioController : IDisposable
 
     public AudioController()
     {
-        _activeSoundEffectInstances = new List<SoundEffectInstance>();
+        _activeSoundEffectInstances = [];
+        _uniqueSoundEffectInstances = [];
     }
 
     ~AudioController() => Dispose(false);
 
     public void Update()
     {
+        foreach (var kvp in _uniqueSoundEffectInstances)
+        {
+            SoundEffectInstance instance = kvp.Value;
+            if (instance.State == SoundState.Stopped)
+            {
+                if (!instance.IsDisposed)
+                {
+                    instance.Dispose();
+                }
+                _uniqueSoundEffectInstances.Remove(kvp.Key);
+            }
+        }
         for (int i = _activeSoundEffectInstances.Count - 1; i >= 0; i--)
         {
             SoundEffectInstance instance = _activeSoundEffectInstances[i];
@@ -56,7 +71,7 @@ public class AudioController : IDisposable
         }
     }
 
-    public SoundEffectInstance Play(SoundEffect soundEffect, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f, bool isLooped = false)
+    public SoundEffectInstance Play(SoundEffect soundEffect, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f, bool isLooped = false, bool unique = false)
     {
         SoundEffectInstance soundEffectInstance = soundEffect.CreateInstance();
 
@@ -67,16 +82,50 @@ public class AudioController : IDisposable
 
         soundEffectInstance.Play();
 
+        if(unique)
+        {
+            if (_uniqueSoundEffectInstances.ContainsKey(soundEffect.Name))
+            {
+                SoundEffectInstance existingInstance = _uniqueSoundEffectInstances[soundEffect.Name];
+                existingInstance.Stop();
+                existingInstance.Dispose();
+                _uniqueSoundEffectInstances.Remove(soundEffect.Name);
+            }
+            _uniqueSoundEffectInstances.Add(soundEffect.Name, soundEffectInstance);
+            return soundEffectInstance;
+        }
         _activeSoundEffectInstances.Add(soundEffectInstance);
 
         return soundEffectInstance;
     }
 
-    public void StopAll()
+    public bool IsPlaying(string soundEffectName)
     {
+        if (_uniqueSoundEffectInstances.TryGetValue(soundEffectName, out SoundEffectInstance instance))
+        {
+            return instance.State == SoundState.Playing;
+        }
+        return false;
+    }
+
+    public void Stop(string soundEffectName)
+    {
+        if (_uniqueSoundEffectInstances.TryGetValue(soundEffectName, out SoundEffectInstance instance))
+        {
+            instance.Stop();
+        }
+    }
+
+    public void StopAll(Predicate<string> matchUnique = null)
+    {
+        matchUnique ??= _ => true;
         foreach (SoundEffectInstance soundEffectInstance in _activeSoundEffectInstances)
         {
             soundEffectInstance.Stop();
+        }
+        foreach (var kvp in _uniqueSoundEffectInstances.Where(e=>matchUnique.Invoke(e.Key)))
+        {
+            kvp.Value.Stop();
         }
     }
 
@@ -86,6 +135,10 @@ public class AudioController : IDisposable
         {
             soundEffectInstance.Pause();
         }
+        foreach (var kvp in _uniqueSoundEffectInstances)
+        {
+            kvp.Value.Pause();
+        }
     }
 
     public void ResumeAll()
@@ -93,6 +146,10 @@ public class AudioController : IDisposable
         foreach (SoundEffectInstance soundEffectInstance in _activeSoundEffectInstances)
         {
             soundEffectInstance.Resume();
+        }
+        foreach (var kvp in _uniqueSoundEffectInstances)
+        {
+            kvp.Value.Resume();
         }
     }
 
@@ -143,7 +200,12 @@ public class AudioController : IDisposable
             {
                 soundEffectInstance.Dispose();
             }
+            foreach (var kvp in _uniqueSoundEffectInstances)
+            {
+                kvp.Value.Dispose();
+            }
             _activeSoundEffectInstances.Clear();
+            _uniqueSoundEffectInstances.Clear();
         }
 
         IsDisposed = true;

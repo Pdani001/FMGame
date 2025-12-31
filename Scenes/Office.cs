@@ -10,7 +10,9 @@ using MonoGame.Extended.Screens;
 using ReFMGame.Animations;
 using ReFMGame.Animations.Camera;
 using ReFMGame.GameHelper;
+using ReFMGame.Network;
 using System;
+using System.Diagnostics;
 using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
@@ -51,6 +53,8 @@ public class Office(FMGame game) : GameScreen(game)
     private SoundEffect door;
     private SoundEffect power_sound;
     private SoundEffect power_ambience;
+    private SoundEffect musicbox;
+    private SoundEffect deepsteps;
 
     private BitmapFont smallFont;
     private BitmapFont largeFont;
@@ -76,7 +80,7 @@ public class Office(FMGame game) : GameScreen(game)
 
     private bool GameReady = false;
 
-    private byte Character = 0;
+    private Character Character = Character.Guard;
     private byte Freddy = 7;
     private byte Bonnie = 3;
     private byte Chica = 10;
@@ -289,6 +293,59 @@ public class Office(FMGame game) : GameScreen(game)
         }
         if(LeftLight || RightLight)
             LightFlicker();
+        if (PowerDown && MusicBoxState > 0 && MusicBoxState < 3)
+            CheckMusicBoxState((float)gameTime.ElapsedGameTime.TotalSeconds);
+            
+    }
+
+    private float MusicBoxElapsed = 0f;
+
+    private void CheckMusicBoxState(float elapsed)
+    {
+        if(MusicBoxState == 1)
+        {
+            if (game.Audio.IsPlaying(musicbox.Name))
+            {
+                MusicBoxElapsed += elapsed;
+                if (MusicBoxElapsed >= 0.05f)
+                {
+                    MusicBoxElapsed = 0f;
+                    bg_texture = officeControl[rng.Next(4) + 1 == 1 ? 5 : 6];
+                }
+                return;
+            }
+            game.Audio.Play(musicbox, unique: true);
+            MusicBoxTimer.Enabled = true;
+        }
+        else
+        {
+            MusicBoxElapsed += elapsed;
+            if (MusicBoxElapsed >= 0.33f)
+            {
+                MusicBoxElapsed = 0f;
+                MusicBoxState++;
+                bg_texture = officeControl[7];
+                light_sound.Volume = 0;
+                game.Audio.Play(deepsteps);
+                MusicBoxTimer.Interval = 2000;
+                MusicBoxTimer.Enabled = true;
+                return;
+            }
+            if (game.Audio.IsPlaying(musicbox.Name))
+            {
+                game.Audio.StopAll(name=>name!="office/doors/light");
+            }
+            if (rng.Next(2) + 1 == 1)
+            {
+                bg_texture = officeControl[5];
+                light_sound.Volume = .25f;
+            }
+            else
+            {
+                bg_texture = officeControl[7];
+                light_sound.Volume = 0;
+            }
+        }
     }
 
     private void LightFlicker()
@@ -395,8 +452,11 @@ public class Office(FMGame game) : GameScreen(game)
     {
         if (Power <= 0 && !PowerDown)
         {
-            cam_up_anim.Stop();
-            cam_down_anim.Reset();
+            if (cam_up_anim.Running)
+            {
+                cam_up_anim.Stop();
+                cam_down_anim.Reset();
+            }
             ToggleCamera(false);
             PowerTimer.Stop();
             Power = 0;
@@ -420,6 +480,7 @@ public class Office(FMGame game) : GameScreen(game)
             fan_sound.Stop();
             game.Audio.Play(power_sound);
             game.Audio.Play(power_ambience, volume: 0.5f);
+            MusicBoxTimer.Enabled = true;
         }
     }
 
@@ -497,19 +558,19 @@ public class Office(FMGame game) : GameScreen(game)
         ActiveView = target;
         switch (Character)
         {
-            case 0:
+            case Character.Guard:
                 Guard = target;
                 break;
-            case 1:
+            case Character.Freddy:
                 Freddy = target;
                 break;
-            case 2:
+            case Character.Bonnie:
                 Bonnie = target;
                 break;
-            case 3:
+            case Character.Chica:
                 Chica = target;
                 break;
-            case 4:
+            case Character.Foxy:
                 Foxy = target;
                 if (Foxy <= 3)
                 {
@@ -546,13 +607,17 @@ public class Office(FMGame game) : GameScreen(game)
     private int Power = 999;
     private bool PowerDown = false;
 
-	private int StaticOpacity = 0;
+    private byte MusicBoxTry = 0;
+    private byte MusicBoxState = 0;
+
+    private int StaticOpacity = 0;
 	private int StaticMultiply = 0;
     private Timer ScareTimer;
 	private Timer StaticOpacityTimer;
 	private Timer PowerTimer;
 	private Timer GameTimer;
 	private Timer CameraTimer;
+	private Timer MusicBoxTimer;
     private readonly Random rng = new(Guid.NewGuid().GetHashCode());
 
     public void PreLoad(Action<bool> callback)
@@ -569,6 +634,9 @@ public class Office(FMGame game) : GameScreen(game)
         door = Content.Load<SoundEffect>("office/doors/door");
         power_sound = Content.Load<SoundEffect>("office/powerdown");
         power_ambience = Content.Load<SoundEffect>("office/ambience2");
+        musicbox = Content.Load<SoundEffect>("office/musicbox");
+        deepsteps = Content.Load<SoundEffect>("office/deepsteps");
+
         cam_frame = Content.Load<Texture2D>("camera/frame");
         cam_rec_texture = Content.Load<Texture2D>("camera/rec");
         cam_map_texture = Content.Load<Texture2D>("camera/map");
@@ -635,7 +703,7 @@ public class Office(FMGame game) : GameScreen(game)
         cam_rec = new CamRec();
         fan_anim = new FanLoop();
         fan_sound = game.Audio.Play(Content.Load<SoundEffect>("office/fan_sound"), volume: 0.5f, isLooped: true);
-        light_sound = game.Audio.Play(Content.Load<SoundEffect>("office/doors/light"), volume: 0f, isLooped: true);
+        light_sound = game.Audio.Play(Content.Load<SoundEffect>("office/doors/light"), volume: 0f, isLooped: true, unique: true);
 
         if(Character > 0)
         {
@@ -644,19 +712,19 @@ public class Office(FMGame game) : GameScreen(game)
         }
         switch (Character)
         {
-            case 0:
+            case Character.Guard:
                 ChangeCameraView(Guard);
                 break;
-            case 1:
+            case Character.Freddy:
                 ChangeCameraView(Freddy);
                 break;
-            case 2:
+            case Character.Bonnie:
                 ChangeCameraView(Bonnie);
                 break;
-            case 3:
+            case Character.Chica:
                 ChangeCameraView(Chica);
                 break;
-            case 4:
+            case Character.Foxy:
                 ChangeCameraView(Foxy);
                 break;
         }
@@ -679,6 +747,33 @@ public class Office(FMGame game) : GameScreen(game)
         };
 		PowerTimer.AutoReset = true;
 		PowerTimer.Enabled = false;
+
+        MusicBoxTimer = new Timer(5000);
+        MusicBoxTimer.Elapsed += delegate
+        {
+            MusicBoxTry++;
+            Debug.WriteLine($"Music Box State: {MusicBoxState}, Try: {MusicBoxTry}");
+            if (MusicBoxState < 3) {
+                if (rng.Next(5) + 1 == 1 || MusicBoxTry == 4)
+                {
+                    MusicBoxTry = 0;
+                    MusicBoxState++;
+                    MusicBoxTimer.Enabled = false;
+                }
+            }
+            else
+            {
+                if (rng.Next(5) + 1 == 1 || MusicBoxTry == 10)
+                {
+                    MusicBoxTry = 0;
+                    MusicBoxState++;
+                    MusicBoxTimer.Enabled = false;
+                    ScreenManager.ReplaceScreen(new FreddyScene(game));
+                }
+            }
+        };
+        MusicBoxTimer.AutoReset = true;
+        MusicBoxTimer.Enabled = false;
 
         GameTimer = new Timer(1000);
         GameTimer.Elapsed += delegate
@@ -913,11 +1008,12 @@ public class Office(FMGame game) : GameScreen(game)
     {
         base.Dispose();
         GC.SuppressFinalize(this);
-        CameraTimer.Dispose();
-        GameTimer.Dispose();
+        CameraTimer?.Dispose();
+        GameTimer?.Dispose();
         ScareTimer?.Dispose();
         PowerTimer?.Dispose();
-        StaticOpacityTimer.Dispose();
+        StaticOpacityTimer?.Dispose();
+        MusicBoxTimer?.Dispose();
         _keyboardListener.KeyPressed -= KeyDebug;
         _mouseListener.MouseClicked -= MouseClick;
         _mouseListener.MouseMoved -= MouseMove;
