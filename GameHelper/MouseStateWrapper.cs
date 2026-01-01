@@ -30,10 +30,6 @@ public class MouseStateWrapper
             scaledMousePosition.X *= xScale;
             float yScale = (float)gameSize.Y / renderTargetDestination.Height;
             scaledMousePosition.Y *= yScale;
-            int clampedX = MathHelper.Clamp((int)Math.Round(scaledMousePosition.X, 0), 0, gameSize.X - 1);
-            int clampedY = MathHelper.Clamp((int)Math.Round(scaledMousePosition.Y, 0), 0, gameSize.Y - 1);
-            scaledMousePosition.X = clampedX;
-            scaledMousePosition.Y = clampedY;
         }
         else
         {
