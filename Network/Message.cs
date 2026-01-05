@@ -1,10 +1,11 @@
-﻿namespace ReFMGame.Network
+﻿using System;
+
+namespace ReFMGame.Network
 {
     public class Message
     {
         public string Type { get; set; }
-        public byte SubChannel { get; set; }
-        public string Client { get; set; }
+        public Client Client { get; set; }
         public bool IsAdmin { get; set; }
         public string ChannelName { get; set; }
         public Channel Channel { get; set; }
@@ -12,7 +13,7 @@
         public int? Value { get; set; }
         public Character? Character { get; set; }
         public Channel[] Channels { get; set; }
-        public string[] Clients { get; set; }
+        public string Nick { get; set; }
         public string Error { get; set; }
         public bool? Success { get; set; }
         public long? Tick { get; set; }

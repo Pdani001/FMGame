@@ -18,14 +18,18 @@ using Timer = System.Timers.Timer;
 namespace ReFMGame.Scenes;
 public class Menu(FMGame game) : GameScreen(game)
 {
-    private Texture2D bg_texture;
-    private Texture2D logo;
+    public Texture2D bg_texture { get; private set; }
+    public Texture2D logo { get; private set; }
     private SoundEffectInstance music;
-    private TextureAnimation bg_animation;
-    private TextureAnimation static_animation;
-    private BitmapFont bmfont;
-    private float elapsed = 0;
+    public TextureAnimation bg_animation { get; private set; }
+    public TextureAnimation static_animation { get; private set; }
+    public BitmapFont bmfont { get; private set; }
     private Rectangle start = new(128, 352, 138, 32);
+    private Rectangle credits = new(128, 400, 172, 32);
+    private string startPadding = "    ";
+    private Vector2 startPadSize = Vector2.Zero;
+    private string creditsPadding = "    ";
+    private Vector2 creditsPadSize = Vector2.Zero;
     public override void Draw(GameTime gameTime)
     {
         GraphicsDevice.SetRenderTarget(game.RenderTarget);
@@ -34,78 +38,79 @@ public class Menu(FMGame game) : GameScreen(game)
         Color bgcolor = Color.White;
         bgcolor.A = (byte)(255 - BGOpacity);
         game.SpriteBatch.Draw(bg_texture, Vector2.Zero, null, bgcolor, 0, Vector2.Zero , 1, SpriteEffects.None, 0);
-        string padding = "    ";
-        if (start.Contains(Mouse.GetState().Position))
-            padding = " >> ";
-        Vector2 padSize = bmfont.MeasureString(padding);
-        padSize.Y = 0;
-        game.SpriteBatch.DrawString(bmfont, padding+"Start", start.Location.ToVector2() - padSize, Color.White);
-        if (!RareBG)
-            game.SpriteBatch.Draw(logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
-        else
-        {
-            Color color = Color.White;
-            string text = "- Press Start -";
-            elapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (elapsed >= 1)
-                elapsed = 0;
-            if (elapsed >= .5)
-                color.A = 0;
-            Vector2 size = bmfont.MeasureString(text);
-            game.SpriteBatch.DrawString(bmfont, text, new(640 - size.X / 2, 620), color);
-        }
+        
+        game.SpriteBatch.DrawString(bmfont, startPadding+"Start", start.Location.ToVector2() - startPadSize, Color.White);
+        game.SpriteBatch.DrawString(bmfont, creditsPadding+"Credits", credits.Location.ToVector2() - creditsPadSize, Color.White);
+        game.SpriteBatch.Draw(logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
+        if(RareBGM)
+            game.SpriteBatch.DrawString(bmfont, "57", new(79, 190), Color.Yellow);
         game.SpriteBatch.End();
 
-        if (!RareBG)
-        {
-            Color staticcolor = Color.White;
-            staticcolor.A = (byte)(255 - StaticOpacity);
-            game.SpriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.Additive);
-            game.SpriteBatch.Draw(static_animation[static_animation.Index], Vector2.Zero, null, staticcolor, 0, Vector2.Zero , 1, SpriteEffects.None, .4f);
-            game.SpriteBatch.End();
-        }
+        Color staticcolor = Color.White;
+        staticcolor.A = (byte)(255 - StaticOpacity);
+        game.SpriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.Additive);
+        game.SpriteBatch.Draw(static_animation[static_animation.Index], Vector2.Zero, null, staticcolor, 0, Vector2.Zero , 1, SpriteEffects.None, .4f);
+        game.SpriteBatch.End();
     }
 
     public override void Update(GameTime gameTime)
     {
+        Mouse.SetCursor(MouseCursor.Arrow);
+        startPadding = "    ";
         static_animation.Animate(gameTime);
-        if (start.Contains(Mouse.GetState().Position) && MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+        if (start.Contains(game.MouseState.Position))
+        {
+            startPadding = " >> ";
+            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+            {
+                ScreenManager.ReplaceScreen(new Select(game));
+            }
+        }
+        if (game.DebugMode && KeyboardExtended.GetState().WasKeyPressed(Keys.S))
         {
             ScreenManager.ReplaceScreen(new Loading(game));
-            //ScreenManager.ReplaceScreen(new NextDay(game, game.GetScreenshot()));
         }
-#if DEBUG
-        if (KeyboardExtended.GetState().WasKeyPressed(Keys.S))
+        startPadSize = bmfont.MeasureString(startPadding);
+        startPadSize.Y = 0;
+
+        creditsPadding = "    ";
+        if (credits.Contains(game.MouseState.Position))
         {
-            ScreenManager.ReplaceScreen(new StaticScene(game));
+            creditsPadding = " >> ";
+            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+            {
+                ScreenManager.ShowScreen(new Credits(game, this));
+            }
         }
-#endif
+        creditsPadSize = bmfont.MeasureString(creditsPadding);
+        creditsPadSize.Y = 0;
     }
 
-    private bool RareBG = false;
-    private int BGOpacity = 0;
-    private int StaticOpacity = 0;
+    public bool RareBGM { get; private set; } = false;
+    public int BGOpacity { get; private set; } = 0;
+    public int StaticOpacity { get; private set; } = 0;
     private Timer BGOpacityTimer;
     private Timer StaticOpacityTimer;
     private Timer SpriteTimer;
     private readonly Random rng = new(Guid.NewGuid().GetHashCode());
     public override void Initialize()
     {
+        Mouse.SetCursor(MouseCursor.Arrow);
         if (game.DebugMode)
         {
-            RareBG = rng.Next(3) == 0;
+            RareBGM = rng.Next(3) == 0;
         }
         else
         {
-            RareBG = rng.Next(6) == 1;
+            RareBGM = rng.Next(6) == 1;
         }
         BGOpacityTimer = new Timer(90);
         BGOpacityTimer.Elapsed += (_, _) =>
         {
             BGOpacity = rng.Next(250);
         };
-        BGOpacityTimer.AutoReset = !RareBG;
-        BGOpacityTimer.Enabled = !RareBG;
+        BGOpacityTimer.AutoReset = true;
+        BGOpacityTimer.Enabled = true;
 
         SpriteTimer = new Timer(300);
         SpriteTimer.Elapsed += (_, _) =>
@@ -114,8 +119,8 @@ public class Menu(FMGame game) : GameScreen(game)
             int index = (bg > 96) ? bg - 96 : 0;
             bg_texture = bg_animation[index];
         };
-        SpriteTimer.AutoReset = !RareBG;
-        SpriteTimer.Enabled = false;
+        SpriteTimer.AutoReset = true;
+        SpriteTimer.Enabled = true;
 
         StaticOpacity = 50 + rng.Next(100);
         StaticOpacityTimer = new Timer(80);
@@ -123,8 +128,8 @@ public class Menu(FMGame game) : GameScreen(game)
         {
             StaticOpacity = 50 + rng.Next(100);
         };
-        StaticOpacityTimer.AutoReset = !RareBG;
-        StaticOpacityTimer.Enabled = !RareBG;
+        StaticOpacityTimer.AutoReset = true;
+        StaticOpacityTimer.Enabled = true;
         base.Initialize();
     }
 
@@ -145,26 +150,13 @@ public class Menu(FMGame game) : GameScreen(game)
         }
     }
 
-    private void Client_NicknameUpdate(bool success, string error)
-    {
-        if (success)
-        {
-            Debug.WriteLine("Nickname set successfully.");
-            game.Client.JoinChannel("asd");
-        }
-        else
-        {
-            Debug.WriteLine($"Failed to set nickname: {error}");
-        }
-    }
-
     private void Client_Connected()
     {
 #if DEBUG
         Debug.WriteLine("Connected to server in DEBUG mode.");
         game.Client.SendServerSecret(Environment.GetEnvironmentVariable("SERVER_SECRET") ?? "");
 #else
-        game.Client.SetNickname($"Player{rng.Next(100,9999)}");
+        game.Client.RequestChannelList();
 #endif
     }
 
@@ -172,8 +164,9 @@ public class Menu(FMGame game) : GameScreen(game)
     {
         game.Client.Connected += Client_Connected;
         game.Client.ConnectFailed += Client_ConnectFailed;
-        game.Client.NicknameUpdate += Client_NicknameUpdate;
         game.Client.JoinedChannel += Client_JoinedChannel;
+        game.Client.LeftChannel += Client_LeftChannel;
+        game.Client.ChannelListReceived += Client_ChannelListReceived;
 #if DEBUG
         game.Client.ServerSecretAccepted += Client_ServerSecretAccepted;
 #endif
@@ -188,29 +181,40 @@ public class Menu(FMGame game) : GameScreen(game)
         bmfont = Content.Load<BitmapFont>("font/b_volter32");
         logo = Content.Load<Texture2D>("menu/logo");
         bg_animation = new MenuBgAnim(Content);
-        if (RareBG){
-            bg_texture = Content.Load<Texture2D>("menu/rare");
+        if (RareBGM){
             Debug.WriteLine("I ❤ FNaF57");
             music = Content.Load<SoundEffect>("menu/fnaf57")?.CreateInstance();
             music.Volume = 0.5f;
-            BGOpacity = 0;
         } else {
-            bg_texture = bg_animation[0];
             music = Content.Load<SoundEffect>("menu/ambience")?.CreateInstance();
             music.Volume = 0.2f;
-            BGOpacity = rng.Next(250);
-            SpriteTimer.Enabled = true;
         }
+        bg_texture = bg_animation[0];
+        BGOpacity = rng.Next(250);
         music.IsLooped = true;
         static_animation = new StaticAnim(Content);
         music.Play();
+        startPadSize = bmfont.MeasureString(startPadding);
+        startPadSize.Y = 0;
+        creditsPadSize = bmfont.MeasureString(creditsPadding);
+        creditsPadSize.Y = 0;
         base.LoadContent();
+    }
+
+    private void Client_ChannelListReceived(Channel[] obj)
+    {
+        game.Client.JoinChannel("asd", Environment.GetEnvironmentVariable("NICKNAME") ?? $"Player{rng.Next(100, 9999)}");
+    }
+
+    private void Client_LeftChannel(string obj)
+    {
+        game.Client.RequestChannelList();
     }
 
 #if DEBUG
     private void Client_ServerSecretAccepted()
     {
-        game.Client.SetNickname(Environment.GetEnvironmentVariable("NICKNAME") ?? $"Player{rng.Next(100, 9999)}");
+        game.Client.RequestChannelList();
     }
 #endif
 
@@ -223,8 +227,10 @@ public class Menu(FMGame game) : GameScreen(game)
         SpriteTimer?.Dispose();
         StaticOpacityTimer.Dispose();
         game.Client.Connected -= Client_Connected;
-        game.Client.NicknameUpdate -= Client_NicknameUpdate;
+        game.Client.ConnectFailed -= Client_ConnectFailed;
         game.Client.JoinedChannel -= Client_JoinedChannel;
+        game.Client.LeftChannel -= Client_LeftChannel;
+        game.Client.ChannelListReceived -= Client_ChannelListReceived;
 #if DEBUG
         game.Client.ServerSecretAccepted -= Client_ServerSecretAccepted;
 #endif

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -9,15 +10,19 @@ namespace ReFMGame.Network
 {
     public class NetworkClient
     {
-        private readonly TcpGameClient _client;
+        private TcpGameClient _client;
         private readonly ConcurrentQueue<Message> _incoming = new();
 
-        public Channel Channel { get; private set; }
+        public Channel Channel { get; private set; } = null;
 
         private readonly string Secret = "[9edp!J3qWd4)XWtW#sa@s@>PJaXEW]Ns0FzYi5{WEA4pfCjgbeEU3+exR)+ww2(";
-        private string Session { get; set; }
 
-        public bool IsConnected => _client.IsConnected;
+        public Client Self { get; private set; } = null;
+        private string Session => Self.Id.ToString();
+
+        public const int PROTOCOL_VERSION = 1;
+
+        public bool IsConnected => _client?.IsConnected ?? false;
 
         long lastServerTick;
 
@@ -33,7 +38,6 @@ namespace ReFMGame.Network
         public event Action<string> ChannelUserJoined;
         public event Action<string> ChannelUserLeft;
         public event Action<string, string> ChatMessageReceived;
-        public event Action<bool, string> NicknameUpdate;
 
         public NetworkClient(string host, int port)
         {
@@ -42,14 +46,22 @@ namespace ReFMGame.Network
 
         // ---- Connection ----
 
-        public void Connect()
+        public void Connect(string? host, int port = 7121)
         {
             if (IsConnected) return;
             Debug.WriteLine("NetworkClient: Attempting to connect...");
+            if(host != null)
+                _client = new TcpGameClient(host, port, _incoming);
             if (!_client.ConnectAsync())
             {
                 ConnectFailed?.Invoke(_client.ErrorMessage);
             }
+            else
+                Send(new
+                {
+                    type = "hello",
+                    value = PROTOCOL_VERSION
+                });
         }
         public void Disconnect()
         {
@@ -58,30 +70,23 @@ namespace ReFMGame.Network
             Channel = null;
         }
 
-        // ---- Identity ----
+        // ---- Channels / Lobbys ----
 
-        public void SetNickname(string nick)
-        {
-            Send(new { Session, type = "set_nick", nick });
-        }
-
-        // ---- Channels ----
-
-        public void CreateChannel(string name, bool hidden = false, bool autoClose = false)
+        public void CreateChannel(string name, string nick, bool hidden = false)
         {
             Send(new
             {
                 Session,
                 type = "create_channel",
                 channel = name,
-                hidden,
-                autoClose
+                nick,
+                hidden
             });
         }
 
-        public void JoinChannel(string name, bool hidden = false, bool autoClose = false)
+        public void JoinChannel(string name, string nick, bool hidden = false)
         {
-            Send(new { Session, type = "join_channel", channel = name, hidden, autoClose });
+            Send(new { Session, type = "join_channel", channel = name, nick, hidden });
         }
 
         public void LeaveChannel()
@@ -110,6 +115,8 @@ namespace ReFMGame.Network
 
         private void Send(object payload)
         {
+            if (_client == null || !_client.IsConnected)
+                return;
             var json = JsonSerializer.Serialize(payload);
             var data = Encoding.UTF8.GetBytes(json);
 
@@ -129,7 +136,7 @@ namespace ReFMGame.Network
                 switch (msg.Type)
                 {
                     case "auth":
-                        Session = msg.Text;
+                        Self = msg.Client;
                         break;
 
                     case "challenge":
@@ -169,19 +176,21 @@ namespace ReFMGame.Network
                         break;
 
                     case "channel_user_joined":
-                        ChannelUserJoined?.Invoke(msg.Client);
+                        ChannelUserJoined?.Invoke(msg.Client.Nick);
+                        Channel.Clients.Add(msg.Client);
                         break;
 
                     case "channel_user_left":
-                        ChannelUserLeft?.Invoke(msg.Client);
+                        ChannelUserLeft?.Invoke(msg.Client.Nick);
+                        Channel.Clients.RemoveAll(c => c.Id == msg.Client.Id);
                         break;
 
                     case "chat":
-                        ChatMessageReceived?.Invoke(msg.Client, msg.Text);
+                        ChatMessageReceived?.Invoke(msg.Client.Nick, msg.Text);
                         break;
 
-                    case "set_nick":
-                        NicknameUpdate?.Invoke(msg.Success ?? false, msg.Error);
+                    case "change_owner":
+                        Channel.Owner = msg.Client.Id;
                         break;
 
                     case "server_secret":
