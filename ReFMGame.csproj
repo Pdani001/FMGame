@@ -57,11 +57,29 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Update="Content\font\b_volter24.fnt">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <None Update="Content\font\ui16.fnt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Content\font\b_volter24_0.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <None Update="Content\font\ui16_0.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\font\ui16_1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\font\ui20.fnt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\font\ui20_0.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\font\ui20_1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\font\vui20.fnt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Content\font\vui20_0.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="LICENSE">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

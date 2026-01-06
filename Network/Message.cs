@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ReFMGame.Network
 {
@@ -15,7 +16,10 @@ namespace ReFMGame.Network
         public Channel[] Channels { get; set; }
         public string Nick { get; set; }
         public string Error { get; set; }
+        public bool Ready { get; set; }
         public bool? Success { get; set; }
         public long? Tick { get; set; }
+        public CharacterPosition[] Positions { get; set; }
+        public List<Selected> Selected { get; set; }
     }
 }

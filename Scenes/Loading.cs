@@ -3,12 +3,13 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Screens;
 using ReFMGame.Animations;
 using ReFMGame.GameHelper;
+using ReFMGame.Network;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReFMGame.Scenes;
-public class Loading(FMGame game) : GameScreen(game)
+public class Loading(FMGame game, Character character = Character.Guard) : GameScreen(game)
 {
 	private Texture2D spinner;
 	private FrameAnimation animation;
@@ -27,34 +28,36 @@ public class Loading(FMGame game) : GameScreen(game)
 	}
 
     CancellationTokenSource source = new();
+    readonly Office office = new Office(game, character);
+
 
     public override void LoadContent()
 	{
         base.LoadContent();
         spinner = Content.Load<Texture2D>("fm-spinner");
 		animation = new SpinnerAnim();
+        game.Client.GameStart += Client_GameStart;
         Task.Delay(10).ContinueWith(t =>
         {
-            var office = new Office(game);
             office.PreLoad(delegate
             {
                 Debug.WriteLine("Office preload complete");
-                Task.Delay(1000).WaitAsync(source.Token).ContinueWith(t =>
-                {
-                    if(source.IsCancellationRequested)
-                    {
-                        Debug.WriteLine("Loading screen task cancelled!");
-                        return;
-                    }
-                    ScreenManager.ReplaceScreen(office);
-                });
+                if(!source.IsCancellationRequested)
+                    game.Client.SetReady(true);
             });
         });
 	}
 
+    private void Client_GameStart(CharacterPosition[] obj)
+    {
+        office.SetPositions(obj);
+        ScreenManager.ReplaceScreen(office);
+    }
+
     public override void UnloadContent()
     {
         base.UnloadContent();
+        game.Client.GameStart -= Client_GameStart;
         source.Cancel();
     }
 }

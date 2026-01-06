@@ -25,7 +25,7 @@ public class FMGame : Game
     public Rectangle RenderTargetDestination { get; private set; }
     private SpriteFont _font;
     private SmartFramerate smartFPS;
-    static GumService GumUI => GumService.Default;
+    public GumService GumUI => GumService.Default;
     public MouseStateWrapper MouseState { get; private set; }
     public AudioController Audio { get; private set; }
 
@@ -228,7 +228,6 @@ public class FMGame : Game
     {
         base.Draw(gameTime);
         Color BaseColor = Color.Black;
-        GumUI.Draw();
         GraphicsDevice.SetRenderTarget(null);
         SpriteBatch.Begin();
         SpriteBatch.Draw(RenderTarget, RenderTargetDestination, Color.White);

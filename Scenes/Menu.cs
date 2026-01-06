@@ -16,7 +16,7 @@ using System.Diagnostics;
 using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
-public class Menu(FMGame game) : GameScreen(game)
+public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
 {
     public Texture2D bg_texture { get; private set; }
     public Texture2D logo { get; private set; }
@@ -55,6 +55,12 @@ public class Menu(FMGame game) : GameScreen(game)
 
     public override void Update(GameTime gameTime)
     {
+        if (lobby)
+        {
+            lobby = false;
+            ScreenManager.ShowScreen(new Lobby(game, this));
+            return;
+        }
         Mouse.SetCursor(MouseCursor.Arrow);
         startPadding = "    ";
         static_animation.Animate(gameTime);
@@ -63,7 +69,7 @@ public class Menu(FMGame game) : GameScreen(game)
             startPadding = " >> ";
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
             {
-                ScreenManager.ReplaceScreen(new Select(game));
+                ScreenManager.ShowScreen(new Lobby(game, this));
             }
         }
         if (game.DebugMode && KeyboardExtended.GetState().WasKeyPressed(Keys.S))
@@ -120,7 +126,7 @@ public class Menu(FMGame game) : GameScreen(game)
             bg_texture = bg_animation[index];
         };
         SpriteTimer.AutoReset = true;
-        SpriteTimer.Enabled = true;
+        SpriteTimer.Enabled = false;
 
         StaticOpacity = 50 + rng.Next(100);
         StaticOpacityTimer = new Timer(80);
@@ -133,50 +139,12 @@ public class Menu(FMGame game) : GameScreen(game)
         base.Initialize();
     }
 
-    private void Client_ConnectFailed(string error)
-    {
-        Debug.WriteLine($"Connection failed: {error}");
-    }
-
-    private void Client_JoinedChannel(Channel channel, string error)
-    {
-        if(error == null)
-        {
-            Debug.WriteLine($"Joined channel: {channel.Name}");
-        }
-        else
-        {
-            Debug.WriteLine($"Failed to join channel: {error}");
-        }
-    }
-
-    private void Client_Connected()
-    {
-#if DEBUG
-        Debug.WriteLine("Connected to server in DEBUG mode.");
-        game.Client.SendServerSecret(Environment.GetEnvironmentVariable("SERVER_SECRET") ?? "");
-#else
-        game.Client.RequestChannelList();
-#endif
-    }
-
     public override void LoadContent()
     {
-        game.Client.Connected += Client_Connected;
-        game.Client.ConnectFailed += Client_ConnectFailed;
-        game.Client.JoinedChannel += Client_JoinedChannel;
-        game.Client.LeftChannel += Client_LeftChannel;
-        game.Client.ChannelListReceived += Client_ChannelListReceived;
-#if DEBUG
-        game.Client.ServerSecretAccepted += Client_ServerSecretAccepted;
-#endif
-
-        //if (!game.Client.IsConnected)
-        //    game.Client.Connect();
-        //else
-        //{
-        //    game.Client.LeaveChannel();
-        //}
+        if (game.Client.IsConnected && !lobby)
+        {
+            game.Client.Disconnect();
+        }
         game.Audio.StopAll();
         bmfont = Content.Load<BitmapFont>("font/b_volter32");
         logo = Content.Load<Texture2D>("menu/logo");
@@ -198,25 +166,9 @@ public class Menu(FMGame game) : GameScreen(game)
         startPadSize.Y = 0;
         creditsPadSize = bmfont.MeasureString(creditsPadding);
         creditsPadSize.Y = 0;
+        SpriteTimer.Enabled = true;
         base.LoadContent();
     }
-
-    private void Client_ChannelListReceived(Channel[] obj)
-    {
-        game.Client.JoinChannel("asd", Environment.GetEnvironmentVariable("NICKNAME") ?? $"Player{rng.Next(100, 9999)}");
-    }
-
-    private void Client_LeftChannel(string obj)
-    {
-        game.Client.RequestChannelList();
-    }
-
-#if DEBUG
-    private void Client_ServerSecretAccepted()
-    {
-        game.Client.RequestChannelList();
-    }
-#endif
 
     public override void Dispose()
     {
@@ -226,13 +178,5 @@ public class Menu(FMGame game) : GameScreen(game)
         BGOpacityTimer?.Dispose();
         SpriteTimer?.Dispose();
         StaticOpacityTimer.Dispose();
-        game.Client.Connected -= Client_Connected;
-        game.Client.ConnectFailed -= Client_ConnectFailed;
-        game.Client.JoinedChannel -= Client_JoinedChannel;
-        game.Client.LeftChannel -= Client_LeftChannel;
-        game.Client.ChannelListReceived -= Client_ChannelListReceived;
-#if DEBUG
-        game.Client.ServerSecretAccepted -= Client_ServerSecretAccepted;
-#endif
     }
 }

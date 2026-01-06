@@ -6,16 +6,16 @@ using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
 using ReFMGame.GameHelper;
-using System.Diagnostics;
-using static System.Net.Mime.MediaTypeNames;
+using System;
+using System.Collections.Generic;
 
 namespace ReFMGame.Scenes;
 public class Credits(FMGame game, Menu menu) : GameScreen(game)
 {
     readonly Rectangle backButton = new(0, 0, 128, 48);
-    SizeF backSize;
+    Vector2 backPos;
     SizeF lineSize;
-    Rectangle homepage;
+    List<(Rectangle, Action)> credits = [];
     BitmapFont small;
     BitmapFont smallB;
     BitmapFont large;
@@ -28,7 +28,7 @@ public class Credits(FMGame game, Menu menu) : GameScreen(game)
         bgcolor.A = (byte)(255 - menu.BGOpacity);
         game.SpriteBatch.Draw(menu.bg_texture, Vector2.Zero, null, bgcolor, 0, Vector2.Zero , 1, SpriteEffects.None, 0);
 
-        game.SpriteBatch.DrawString(smallB, "Back", new(64 - backSize.Width / 2, 24 - backSize.Height / 2), Color.White);
+        game.SpriteBatch.DrawString(smallB, "Back", backPos, Color.White);
         game.SpriteBatch.DrawString(large, "Credits", new(64, 224), Color.White);
         game.SpriteBatch.DrawString(small,
 @"Five Nights at Freddy's by:
@@ -43,6 +43,14 @@ Menu music created by:
         game.SpriteBatch.Draw(menu.logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
         if(menu.RareBGM)
             game.SpriteBatch.DrawString(menu.bmfont, "57", new(79, 190), Color.Yellow);
+        if (game.DebugMode)
+        {
+            game.SpriteBatch.DrawRectangle(backButton, new(163, 87, 171));
+            foreach (var credit in credits)
+            {
+                game.SpriteBatch.DrawRectangle(credit.Item1, Color.Red);
+            }
+        }
         game.SpriteBatch.End();
 
         Color staticcolor = Color.White;
@@ -60,13 +68,19 @@ Menu music created by:
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
                 ScreenManager.CloseScreen();
         }
-        if (homepage.Contains(game.MouseState.Position))
+        bool hit = false;
+        foreach(var credit in credits)
         {
-            Mouse.SetCursor(MouseCursor.Hand);
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
-                GameHelper.GameHelper.OpenUrl("https://github.com/Pdani001/FMGame");
+            if (credit.Item1.Contains(game.MouseState.Position))
+            {
+                hit = true;
+                Mouse.SetCursor(MouseCursor.Hand);
+                if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+                    credit.Item2();
+                break;
+            }
         }
-        else
+        if (!hit)
         {
             Mouse.SetCursor(MouseCursor.Arrow);
         }
@@ -77,10 +91,21 @@ Menu music created by:
         small = Content.Load<BitmapFont>("font/nunito20");
         smallB = Content.Load<BitmapFont>("font/nunito20b");
         large = Content.Load<BitmapFont>("font/nunito32b");
-        backSize = smallB.MeasureString("Back");
+        SizeF backSize = smallB.MeasureString("Back");
+        backPos = new(64 - backSize.Width / 2, 24 - backSize.Height / 2);
         lineSize = small.MeasureString("text");
-        homepage = new(64, 264 + ((int)lineSize.Height * 3), 448, (int)lineSize.Height * 2);
-        Debug.WriteLine(homepage);
+        Rectangle homepage = new(64, 260 + ((int)lineSize.Height * 3) + ((int)lineSize.Height / 4), 448, (int)lineSize.Height * 2);
+        credits.Add((homepage, () =>
+        {
+            MethodHelper.OpenUrl("https://github.com/Pdani001/FMGame");
+        }
+        ));
         base.LoadContent();
+    }
+
+    public override void UnloadContent()
+    {
+        Mouse.SetCursor(MouseCursor.Arrow);
+        base.UnloadContent();
     }
 }

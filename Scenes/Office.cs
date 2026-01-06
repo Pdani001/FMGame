@@ -19,7 +19,7 @@ using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
 
-public class Office(FMGame game) : GameScreen(game)
+public class Office(FMGame game, Character character) : GameScreen(game)
 {
     private Texture2D bg_texture;
     private Texture2D camera_texture;
@@ -91,11 +91,11 @@ public class Office(FMGame game) : GameScreen(game)
     private Character Jumpscared = Character.None;
     private bool IsJumpscared => Jumpscared != Character.None;
     private bool JumpscareRunning => ActiveJumpscare != null;
-    private Character Character = Character.Guard;
+    private Character Character { get; } = character == Character.None ? Character.Guard : character;
     private short Freddy = 0;
-    private short Bonnie = 8;
-    private short Chica = 1;
-    private short Foxy = 2;
+    private short Bonnie = -1;
+    private short Chica = -1;
+    private short Foxy = 0;
     private short Guard = 0;
     private short TargetView = 255;
     private short ActiveView = 255;
@@ -178,7 +178,7 @@ public class Office(FMGame game) : GameScreen(game)
             string time = $"{Time} AM";
             float width = largeFont.MeasureString(time).Width;
             game.SpriteBatch.DrawString(largeFont, time, new(game.WindowSize.X - width - 26, 24), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
-            if(Character == 0)
+            if(Character == Character.Guard)
                 game.SpriteBatch.Draw(cam_flip, new(254, 625), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
         }
         if(cam_down_anim.Running)
@@ -210,7 +210,7 @@ public class Office(FMGame game) : GameScreen(game)
         }
         if (game.DebugMode)
         {
-            if (!PowerDown && Character == 0)
+            if (!PowerDown && Character == Character.Guard)
             {
                 game.SpriteBatch.DrawRectangle(CamFlipReset, new(123, 43, 127), layerDepth: 1);
                 game.SpriteBatch.DrawRectangle(CamFlipStart, new(123, 43, 127), layerDepth: 1);
@@ -581,7 +581,7 @@ public class Office(FMGame game) : GameScreen(game)
         }
     }
 
-    public void CheckPower()
+    private void CheckPower()
     {
         if (Power <= 0 && !PowerDown)
         {
@@ -617,7 +617,7 @@ public class Office(FMGame game) : GameScreen(game)
         }
     }
 
-    public void CheckCounter()
+    private void CheckCounter()
     {
         if (TimeCounter >= 86)
         {
@@ -824,6 +824,29 @@ public class Office(FMGame game) : GameScreen(game)
 	private Timer MusicBoxTimer;
     private readonly Random rng = new(Guid.NewGuid().GetHashCode());
 
+    public void SetPositions(CharacterPosition[] positions)
+    {
+        for (int i = 0; i < positions.Length; i++)
+        {
+            var position = positions[i].Position;
+            switch (positions[i].Character)
+            {
+                case Character.Freddy:
+                    Freddy = position;
+                    break;
+                case Character.Bonnie:
+                    Bonnie = position;
+                    break;
+                case Character.Chica:
+                    Chica = position;
+                    break;
+                case Character.Foxy:
+                    Foxy = position;
+                    break;
+            }
+        }
+    }
+
     public void PreLoad(Action<bool> callback)
     {
         _keyboardListener = new KeyboardListener();
@@ -931,7 +954,7 @@ public class Office(FMGame game) : GameScreen(game)
         fan_sound = game.Audio.Play(Content.Load<SoundEffect>("office/fan_sound"), volume: 0.5f, isLooped: true);
         light_sound = game.Audio.Play(Content.Load<SoundEffect>("office/doors/light"), volume: 0f, isLooped: true, unique: true);
 
-        if(Character > 0)
+        if(Character != Character.Guard)
         {
             fan_sound.Volume = 0.02f;
             CameraActive = true;
@@ -1073,7 +1096,7 @@ public class Office(FMGame game) : GameScreen(game)
 
         if (CameraActive)
         {
-            if (!BlockCamFlip && CamFlipStart.Contains(game.MouseState.Position) && Character == 0)
+            if (!BlockCamFlip && CamFlipStart.Contains(game.MouseState.Position) && Character == Character.Guard)
             {
                 ToggleCamera(false);
             }

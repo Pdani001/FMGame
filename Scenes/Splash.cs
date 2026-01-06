@@ -10,6 +10,7 @@ namespace ReFMGame.Scenes;
 public class Splash(FMGame game) : GameScreen(game)
 {
     private readonly List<Texture2D> textures = [];
+    private readonly Rectangle GameView = new(new(0, 0), game.WindowSize);
     private const float MaxWidth = 1200f;
     private int Index = 0;
     private bool Forward = false;
@@ -42,7 +43,7 @@ public class Splash(FMGame game) : GameScreen(game)
 
     public override void Update(GameTime gameTime)
     {
-        if (textures.Count <= Index || (Mouse.GetState().LeftButton == ButtonState.Pressed && FMGame.Active) || (Mouse.GetState().RightButton == ButtonState.Pressed && FMGame.Active)) {
+        if (textures.Count <= Index || (Mouse.GetState().LeftButton == ButtonState.Pressed && FMGame.Active && GameView.Contains(game.MouseState.Position)) || (Mouse.GetState().RightButton == ButtonState.Pressed && FMGame.Active && GameView.Contains(game.MouseState.Position))) {
             ScreenManager.ReplaceScreen(new Menu(game));
             return;
         }

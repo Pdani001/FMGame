@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace ReFMGame.GameHelper
 {
-    public static class GameHelper
+    public static class MethodHelper
     {
         public static double Map(this double val, double min, double max, double toMin, double toMax)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
@@ -8,7 +9,7 @@ using System.Text.Json;
 
 namespace ReFMGame.Network
 {
-    public class NetworkClient
+    public class NetworkClient(string host, int port)
     {
         private TcpGameClient _client;
         private readonly ConcurrentQueue<Message> _incoming = new();
@@ -18,11 +19,14 @@ namespace ReFMGame.Network
         private readonly string Secret = "[9edp!J3qWd4)XWtW#sa@s@>PJaXEW]Ns0FzYi5{WEA4pfCjgbeEU3+exR)+ww2(";
 
         public Client Self { get; private set; } = null;
-        private string Session => Self.Id.ToString();
+        private string Session => Self?.Id.ToString() ?? "";
 
         public const int PROTOCOL_VERSION = 1;
 
         public bool IsConnected => _client?.IsConnected ?? false;
+
+        private readonly string _host = host;
+        private readonly int _port = port;
 
         long lastServerTick;
 
@@ -31,37 +35,35 @@ namespace ReFMGame.Network
         public event Action Connected;
         public event Action<string> ConnectFailed;
         public event Action<string> Error;
-        public event Action Disconnected;
+        public event Action<string> Disconnected;
         public event Action<Channel[]> ChannelListReceived;
         public event Action<Channel, string> JoinedChannel;
         public event Action<string> LeftChannel;
-        public event Action<string> ChannelUserJoined;
-        public event Action<string> ChannelUserLeft;
-        public event Action<string, string> ChatMessageReceived;
+        public event Action<Client, List<Selected>> ChannelUserJoined;
+        public event Action<Client> ChannelUserLeft;
+        public event Action<Client, string> ChatMessageReceived;
 
-        public NetworkClient(string host, int port)
-        {
-            _client = new TcpGameClient(host, port, _incoming);
-        }
+        public event Action<Client, Character> CharacterSelected;
+        public event Action<Character, bool> UserReady;
+        public event Action<int> GameCountdown;
+        public event Action<CharacterPosition[]> GameStart;
+
+        public event Action<Message> GenericMessageReceived;
 
         // ---- Connection ----
 
-        public void Connect(string? host, int port = 7121)
+        public void Connect(string host = null, int port = 7121)
         {
             if (IsConnected) return;
             Debug.WriteLine("NetworkClient: Attempting to connect...");
             if(host != null)
                 _client = new TcpGameClient(host, port, _incoming);
+            else
+                _client = new TcpGameClient(_host, _port, _incoming);
             if (!_client.ConnectAsync())
             {
                 ConnectFailed?.Invoke(_client.ErrorMessage);
             }
-            else
-                Send(new
-                {
-                    type = "hello",
-                    value = PROTOCOL_VERSION
-                });
         }
         public void Disconnect()
         {
@@ -70,7 +72,7 @@ namespace ReFMGame.Network
             Channel = null;
         }
 
-        // ---- Channels / Lobbys ----
+        // ---- Channels ----
 
         public void CreateChannel(string name, string nick, bool hidden = false)
         {
@@ -101,14 +103,26 @@ namespace ReFMGame.Network
 
         // ---- Messaging ----
 
-        public void SendMessage(string text, bool echo = false)
+        public void SendMessage(string text)
         {
-            Send(new { Session, type = "chat", text, echo });
+            Send(new { Session, type = "chat", text });
         }
 
         public void SendServerSecret(string secret)
         {
             Send(new { Session, type = "server_secret", text = secret });
+        }
+
+        // ---- Lobby ----
+
+        public void SelectCharacter(int character)
+        {
+            Send(new { Session, type = "select", value = character });
+        }
+
+        public void SetReady(bool ready)
+        {
+            Send(new { Session, type = "ready", value = ready ? 1 : 0 });
         }
 
         // ---- Internal Send ----
@@ -135,6 +149,14 @@ namespace ReFMGame.Network
             {
                 switch (msg.Type)
                 {
+                    case "hello":
+                        Send(new
+                        {
+                            type = "hello",
+                            value = PROTOCOL_VERSION
+                        });
+                        break;
+
                     case "auth":
                         Self = msg.Client;
                         break;
@@ -158,7 +180,10 @@ namespace ReFMGame.Network
                         break;
 
                     case "disconnected":
-                        Disconnected?.Invoke();
+                        if(_client.WasActive)
+                            Disconnected?.Invoke(msg.Error);
+                        else
+                            ConnectFailed?.Invoke(msg.Error);
                         break;
 
                     case "channel_joined":
@@ -176,17 +201,18 @@ namespace ReFMGame.Network
                         break;
 
                     case "channel_user_joined":
-                        ChannelUserJoined?.Invoke(msg.Client.Nick);
-                        Channel.Clients.Add(msg.Client);
+                        if(!Channel.Clients.Exists(c=>c.Id == msg.Client.Id))
+                            Channel.Clients.Add(msg.Client);
+                        ChannelUserJoined?.Invoke(msg.Client, msg.Selected);
                         break;
 
                     case "channel_user_left":
-                        ChannelUserLeft?.Invoke(msg.Client.Nick);
                         Channel.Clients.RemoveAll(c => c.Id == msg.Client.Id);
+                        ChannelUserLeft?.Invoke(msg.Client);
                         break;
 
                     case "chat":
-                        ChatMessageReceived?.Invoke(msg.Client.Nick, msg.Text);
+                        ChatMessageReceived?.Invoke(msg.Client, msg.Text);
                         break;
 
                     case "change_owner":
@@ -195,6 +221,26 @@ namespace ReFMGame.Network
 
                     case "server_secret":
                         ServerSecretAccepted?.Invoke();
+                        break;
+
+                    case "select":
+                        CharacterSelected?.Invoke(msg.Client, (Character)msg.Value);
+                        break;
+
+                    case "ready":
+                        UserReady?.Invoke((Character)msg.Value, msg.Ready);
+                        break;
+
+                    case "game_countdown":
+                        GameCountdown?.Invoke(msg.Value ?? 0);
+                        break;
+
+                    case "game_start":
+                        GameStart?.Invoke(msg.Positions ?? []);
+                        break;
+
+                    default:
+                        GenericMessageReceived?.Invoke(msg);
                         break;
                 }
             }

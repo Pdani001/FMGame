@@ -11,6 +11,7 @@ namespace ReFMGame.Network
     {
         private readonly ConcurrentQueue<Message> _incoming;
         private readonly MemoryStream _buffer = new();
+        public bool WasActive { get; private set; } = false;
         public string ErrorMessage { get; private set; } = string.Empty;
 
         public TcpGameClient(
@@ -26,15 +27,14 @@ namespace ReFMGame.Network
         {
             Debug.WriteLine("TCP connected");
             ErrorMessage = string.Empty;
+            WasActive = true;
+            _incoming.Enqueue(new Message { Type = "hello" });
         }
 
         protected override void OnDisconnected()
         {
             Debug.WriteLine("TCP disconnected");
-            _incoming.Clear();
-            if(ErrorMessage != string.Empty)
-                _incoming.Enqueue(new Message { Type = "error", Error = ErrorMessage });
-            _incoming.Enqueue(new Message { Type = "disconnected" });
+            _incoming.Enqueue(new Message { Type = "disconnected", Error = ErrorMessage == string.Empty ? null : ErrorMessage });
         }
 
         private static JsonSerializerOptions JsonSerializerOptions => new()
