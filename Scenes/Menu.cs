@@ -20,7 +20,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
 {
     public Texture2D bg_texture { get; private set; }
     public Texture2D logo { get; private set; }
-    private SoundEffectInstance music;
+    private SoundEffectInstance music = null;
     public TextureAnimation bg_animation { get; private set; }
     public TextureAnimation static_animation { get; private set; }
     public BitmapFont bmfont { get; private set; }
@@ -149,19 +149,32 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         bmfont = Content.Load<BitmapFont>("font/b_volter32");
         logo = Content.Load<Texture2D>("menu/logo");
         bg_animation = new MenuBgAnim(Content);
-        if (RareBGM){
-            Debug.WriteLine("I ❤ FNaF57");
-            music = Content.Load<SoundEffect>("menu/fnaf57")?.CreateInstance();
-            music.Volume = 0.5f;
-        } else {
-            music = Content.Load<SoundEffect>("menu/ambience")?.CreateInstance();
-            music.Volume = 0.2f;
+        try
+        {
+            if (RareBGM)
+            {
+                Debug.WriteLine("I ❤ FNaF57");
+                music = Content.Load<SoundEffect>("menu/fnaf57")?.CreateInstance();
+                music.Volume = 0.5f;
+            }
+            else
+            {
+                music = Content.Load<SoundEffect>("menu/ambience")?.CreateInstance();
+                music.Volume = 0.2f;
+            }
+        }
+        catch (Exception)
+        {
+            game.Audio.NoAudio = true;
         }
         bg_texture = bg_animation[0];
         BGOpacity = rng.Next(250);
-        music.IsLooped = true;
         static_animation = new StaticAnim(Content);
-        music.Play();
+        if (music != null)
+        {
+            music.IsLooped = true;
+            music.Play();
+        }
         startPadSize = bmfont.MeasureString(startPadding);
         startPadSize.Y = 0;
         creditsPadSize = bmfont.MeasureString(creditsPadding);
@@ -174,7 +187,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
     {
         base.Dispose();
         GC.SuppressFinalize(this);
-        music.Dispose();
+        music?.Dispose();
         BGOpacityTimer?.Dispose();
         SpriteTimer?.Dispose();
         StaticOpacityTimer.Dispose();

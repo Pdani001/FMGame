@@ -11,6 +11,7 @@ public class AudioController : IDisposable
     private readonly Dictionary<string, SoundEffectInstance> _uniqueSoundEffectInstances;
     private float _previousSoundEffectVolume;
     public bool IsMuted { get; private set; }
+    public bool NoAudio { get; set; } = false;
     public float Volume
     {
         get
@@ -73,6 +74,8 @@ public class AudioController : IDisposable
 
     public SoundEffectInstance Play(SoundEffect soundEffect, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f, bool isLooped = false, bool unique = false)
     {
+        if (NoAudio)
+            return null;
         SoundEffectInstance soundEffectInstance = soundEffect.CreateInstance();
 
         soundEffectInstance.Volume = volume;

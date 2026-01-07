@@ -1,6 +1,4 @@
 ﻿using Gum.Forms;
-using Gum.Forms.Controls;
-using Gum.Forms.DefaultVisuals.V3;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;

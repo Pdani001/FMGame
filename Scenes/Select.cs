@@ -11,6 +11,7 @@ using MonoGame.Extended.Screens;
 using MonoGameGum;
 using MonoGameGum.ExtensionMethods;
 using MonoGameGum.GueDeriving;
+using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
 using System.Collections.Generic;
@@ -178,7 +179,10 @@ public class Select(FMGame game) : GameScreen(game)
             Y = 606,
             Width = 672 + ScrollBar.Width,
             Height = 30,
-            Placeholder = "Press ENTER to send"
+            Placeholder = "Press ENTER to send",
+            MaxNumberOfLines = 1,
+            TextWrapping = Gum.Forms.TextWrapping.NoWrap,
+            MaxLength = 256,
         };
 
         var messageboxvisual = (TextBoxVisual)MessageBox.Visual;
@@ -197,6 +201,11 @@ public class Select(FMGame game) : GameScreen(game)
                 game.Client.SendMessage(MessageBox.Text);
                 MessageBox.Text = "";
             }
+        };
+
+        MessageBox.TextChanged += (_, args) =>
+        {
+            MessageBox.Text = MessageBox.Text.Replace("\n", " ");
         };
 
         ChatBox.AddToRoot();
@@ -223,8 +232,11 @@ public class Select(FMGame game) : GameScreen(game)
     {
         ChatBox.Text += $"\n{message}";
 
-        float textHeight = ui.MeasureString(ChatText.Text).Height;
         float containerHeight = ChatBox.ActualHeight;
+        float containerWidth = ChatBox.ActualWidth;
+        var textSize = ui.MeasureWrappedLineCount(ChatText.Text, containerWidth);
+        float textHeight = textSize * ui.LineHeight;
+        Debug.WriteLine(textHeight);
 
         if (textHeight > containerHeight)
         {
