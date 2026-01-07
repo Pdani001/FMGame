@@ -1,5 +1,6 @@
 ﻿using MonoGame.Extended.BitmapFonts;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -18,67 +19,61 @@ namespace ReFMGame.GameHelper
             return (value >> from) & mask;
         }
 
-        public static int MeasureWrappedLineCount(this BitmapFont font, string text, float maxWidth)
+        public static string[] WrapString(this BitmapFont font, string text, float maxWidth)
         {
-            int totalLines = 0;
-
             var paragraphs = text.Split('\n');
+            List<string> lines = new List<string>();
 
             foreach (var paragraph in paragraphs)
             {
-                if (paragraph.Length == 0)
+                var paragraphTrimmed = paragraph.Trim().Replace("\t", "    ");
+                if (string.IsNullOrEmpty(paragraphTrimmed))
                 {
-                    totalLines++;
+                    lines.Add(paragraphTrimmed);
                     continue;
                 }
 
                 string currentLine = "";
-                var words = paragraph.Split(' ');
+                var words = paragraphTrimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var word in words)
                 {
-                    // Try normal word append
-                    string test = currentLine.Length == 0
-                        ? word
-                        : currentLine + " " + word;
+                    float wordWidth = font.MeasureString(word).Width;
 
-                    if (font.MeasureString(test).Width <= maxWidth)
+                    // Word fits in current line
+                    if (font.MeasureString(currentLine + (currentLine.Length > 0 ? " " : "") + word).Width <= maxWidth)
                     {
-                        currentLine = test;
+                        currentLine += (currentLine.Length > 0 ? " " : "") + word;
                     }
+                    // Word too long for current line but fits on a new line
+                    else if (wordWidth <= maxWidth)
+                    {
+                        lines.Add(currentLine);
+                        currentLine = word; // start new line without extra space
+                    }
+                    // Word too long: force-break by characters
                     else
                     {
-                        // Word itself fits on a new line
-                        if (font.MeasureString(word).Width <= maxWidth)
+                        foreach (char c in word)
                         {
-                            totalLines++;
-                            currentLine = word;
-                        }
-                        // Force-break by character (SAFE version)
-                        else
-                        {
-                            foreach (char c in word)
-                            {
-                                string charTest = currentLine + c;
+                            float charWidth = font.MeasureString(c.ToString()).Width;
 
-                                if (font.MeasureString(charTest).Width > maxWidth)
-                                {
-                                    totalLines++;
-                                    currentLine = c.ToString();
-                                }
-                                else
-                                {
-                                    currentLine = charTest;
-                                }
+                            if (font.MeasureString(currentLine + c).Width > maxWidth)
+                            {
+                                lines.Add(currentLine);
+                                currentLine = ""; // reset fully for next chars
                             }
+
+                            currentLine += c;
                         }
                     }
                 }
 
-                totalLines++;
+                if (!string.IsNullOrEmpty(currentLine))
+                    lines.Add(currentLine);
             }
 
-            return totalLines;
+            return lines.ToArray();
         }
 
         public static void OpenUrl(string url)

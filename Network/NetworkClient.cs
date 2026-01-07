@@ -212,6 +212,7 @@ namespace ReFMGame.Network
                         break;
 
                     case "chat":
+                        msg.Client.IsAdmin = msg.IsAdmin;
                         ChatMessageReceived?.Invoke(msg.Client, msg.Text);
                         break;
 

@@ -99,10 +99,8 @@ public class Select(FMGame game) : GameScreen(game)
         _mouseListener.Update(gameTime);
     }
 
-    TextBox ChatBox;
-    ScrollBar ScrollBar;
+    ScrollViewer ScrollView;
     TextBox MessageBox;
-    TextRuntime ChatText;
     BitmapFont ui;
     public override void LoadContent()
     {
@@ -135,54 +133,26 @@ public class Select(FMGame game) : GameScreen(game)
         game.Client.GameStart += Client_GameStart;
         game.Client.ChatMessageReceived += Client_ChatMessageReceived;
 
-        ScrollBar = new ScrollBar
-        {
-            X = 768,
-            Y = 320,
-            Height = 286,
-            Minimum = 0,
-            Maximum = 0,
-        };
-        var scrollbarvisual = (ScrollBarVisual)ScrollBar.Visual;
-        scrollbarvisual.ThumbInstance.BackgroundColor = Color.LightGray;
-        scrollbarvisual.UpButtonInstance.BackgroundColor = Color.LightGray;
-        scrollbarvisual.UpButtonIcon.Color = Color.Black;
-        scrollbarvisual.DownButtonInstance.BackgroundColor = Color.LightGray;
-        scrollbarvisual.DownButtonIcon.Color = Color.Black;
-
-        ScrollBar.ValueChanged += ScrollBar_ValueChanged;
-
-
-        ChatBox = new TextBox
+        ScrollView = new ScrollViewer
         {
             X = 96,
             Y = 320,
             Width = 672,
             Height = 286,
-            IsReadOnly = true,
-            Text = "Welcome to Fazbear Multiplayer!",
-            TextWrapping = Gum.Forms.TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            IsEnabled = false,
         };
-
-        var chatboxvisual = (TextBoxVisual)ChatBox.Visual;
-        chatboxvisual.TextInstance.CustomFontFile = "font/ui16.fnt";
-        chatboxvisual.TextInstance.UseCustomFont = true;
-        ChatText = chatboxvisual.TextInstance;
-        chatboxvisual.FocusedIndicatorColor = Color.Transparent;
-        chatboxvisual.BackgroundColor = Color.LightGray;
-        chatboxvisual.ForegroundColor = Color.Black;
-        chatboxvisual.TextOverflowVerticalMode = RenderingLibrary.Graphics.TextOverflowVerticalMode.SpillOver;
+        var scrollviewvisual = (ScrollViewerVisual)ScrollView.Visual;
+        scrollviewvisual.BackgroundColor = Color.Transparent;
 
         MessageBox = new TextBox
         {
             X = 96,
             Y = 606,
-            Width = 672 + ScrollBar.Width,
+            Width = 672,
             Height = 30,
             Placeholder = "Press ENTER to send",
-            MaxNumberOfLines = 1,
-            TextWrapping = Gum.Forms.TextWrapping.NoWrap,
-            MaxLength = 256,
+            MaxNumberOfLines = 1
         };
 
         var messageboxvisual = (TextBoxVisual)MessageBox.Visual;
@@ -205,11 +175,19 @@ public class Select(FMGame game) : GameScreen(game)
 
         MessageBox.TextChanged += (_, args) =>
         {
-            MessageBox.Text = MessageBox.Text.Replace("\n", " ");
+            if(MessageBox.Text.Contains('\n'))
+                MessageBox.Text = MessageBox.Text.Replace('\n', ' ');
         };
 
-        ChatBox.AddToRoot();
-        ScrollBar.AddToRoot();
+        MessageBox.PreviewTextInput += (sender, args) =>
+        {
+            if (args.Text.Length >= 256)
+            {
+                args.Handled = true;
+            }
+        };
+
+        ScrollView.AddToRoot();
         MessageBox.AddToRoot();
 
         base.LoadContent();
@@ -220,34 +198,20 @@ public class Select(FMGame game) : GameScreen(game)
         ChatMessage($"{user.Nick}: {text}");
     }
 
-    private void ScrollBar_ValueChanged(object sender, EventArgs e)
-    {
-        if(ScrollBar.Maximum > 0)
-        {
-            ChatText.Y = (float)-ScrollBar.Value;
-        }
-    }
-
     private void ChatMessage(string message)
     {
-        ChatBox.Text += $"\n{message}";
-
-        float containerHeight = ChatBox.ActualHeight;
-        float containerWidth = ChatBox.ActualWidth;
-        var textSize = ui.MeasureWrappedLineCount(ChatText.Text, containerWidth);
-        float textHeight = textSize * ui.LineHeight;
-        Debug.WriteLine(textHeight);
-
-        if (textHeight > containerHeight)
+        foreach(var line in ui.WrapString(message, ScrollView.ActualWidth))
         {
-            // Move the text up so the bottom of the text aligns with the bottom of the box
-            ScrollBar.Maximum = textHeight - containerHeight + 4;
-            ScrollBar.Value = ScrollBar.Maximum;
-            ChatText.Y = -(float)ScrollBar.Maximum;
-        }
-        else
-        {
-            ChatText.Y = 0; // It fits, no scroll needed
+            var label = new Label();
+            label.Text = line;
+            var visual = (LabelVisual)label.Visual;
+            visual.CustomFontFile = "font/ui16.fnt";
+            visual.UseCustomFont = true;
+
+            ScrollView.AddChild(label);
+
+            // Scroll to the bottom:
+            ScrollView.VerticalScrollBarValue = ScrollView.VerticalScrollBarMaximum;
         }
     }
 
@@ -375,8 +339,7 @@ public class Select(FMGame game) : GameScreen(game)
         game.Client.GameStart -= Client_GameStart;
         game.Client.ChatMessageReceived -= Client_ChatMessageReceived;
 
-        ScrollBar.RemoveFromRoot();
-        ChatBox.RemoveFromRoot();
+        ScrollView.RemoveFromRoot();
         MessageBox.RemoveFromRoot();
         base.UnloadContent();
     }
