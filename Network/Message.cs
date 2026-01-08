@@ -21,5 +21,6 @@ namespace ReFMGame.Network
         public long? Tick { get; set; }
         public CharacterPosition[] Positions { get; set; }
         public List<Selected> Selected { get; set; }
+        public GameState State { get; set; }
     }
 }

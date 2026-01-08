@@ -43,7 +43,7 @@ public class Splash(FMGame game) : GameScreen(game)
 
     public override void Update(GameTime gameTime)
     {
-        if (textures.Count <= Index || (Mouse.GetState().LeftButton == ButtonState.Pressed && FMGame.Active && GameView.Contains(game.MouseState.Position)) || (Mouse.GetState().RightButton == ButtonState.Pressed && FMGame.Active && GameView.Contains(game.MouseState.Position))) {
+        if (textures.Count <= Index || (Mouse.GetState().LeftButton == ButtonState.Pressed && game.IsActive && GameView.Contains(game.MouseState.Position)) || (Mouse.GetState().RightButton == ButtonState.Pressed && game.IsActive && GameView.Contains(game.MouseState.Position))) {
             ScreenManager.ReplaceScreen(new Menu(game));
             return;
         }

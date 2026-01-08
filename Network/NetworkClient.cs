@@ -47,6 +47,11 @@ namespace ReFMGame.Network
         public event Action<Character, bool> UserReady;
         public event Action<int> GameCountdown;
         public event Action<CharacterPosition[]> GameStart;
+        public event Action GameAbort;
+        public event Action<GameState> GameState;
+        public event Action<int> GameMusicbox;
+        public event Action<Character, short> RobotMove;
+        public event Action<int> MoveTimer;
 
         public event Action<Message> GenericMessageReceived;
 
@@ -123,6 +128,34 @@ namespace ReFMGame.Network
         public void SetReady(bool ready)
         {
             Send(new { Session, type = "ready", value = ready ? 1 : 0 });
+        }
+
+        // ---- In-Game ----
+
+        public void SetCameraActive(bool state)
+        {
+            Send(new { Session, type = "camera", value = state ? 1 : 0, tick = lastServerTick });
+        }
+
+        public void SetLight(bool left, bool state)
+        {
+            Send(new { Session, type = "light", LeftSide = left, value = state ? 1 : 0, tick = lastServerTick });
+        }
+
+        public void SetDoor(bool left, bool state)
+        {
+            Send(new { Session, type = "door", LeftSide = left, value = state ? 1 : 0, tick = lastServerTick });
+        }
+
+        public void ChangeCameraView(short target)
+        {
+            Send(new { Session, type = "move", value = target, tick = lastServerTick });
+        }
+
+        public void RunCheat(string type)
+        {
+            if(Self.IsAdmin)
+                Send(new { Session, type = "cheat#" + type.ToLower(), tick = lastServerTick });
         }
 
         // ---- Internal Send ----
@@ -213,6 +246,8 @@ namespace ReFMGame.Network
 
                     case "chat":
                         msg.Client.IsAdmin = msg.IsAdmin;
+                        if (msg.Client.Id == Self.Id)
+                            Self.IsAdmin = msg.IsAdmin;
                         ChatMessageReceived?.Invoke(msg.Client, msg.Text);
                         break;
 
@@ -221,6 +256,7 @@ namespace ReFMGame.Network
                         break;
 
                     case "server_secret":
+                        Self.IsAdmin = true;
                         ServerSecretAccepted?.Invoke();
                         break;
 
@@ -238,6 +274,27 @@ namespace ReFMGame.Network
 
                     case "game_start":
                         GameStart?.Invoke(msg.Positions ?? []);
+                        break;
+
+                    case "game_abort":
+                        GameAbort?.Invoke();
+                        break;
+
+                    case "state":
+                        lastServerTick = msg.Tick ?? 0;
+                        GameState?.Invoke(msg.State);
+                        break;
+
+                    case "musicbox":
+                        GameMusicbox?.Invoke(msg.Value ?? 0);
+                        break;
+
+                    case "move":
+                        RobotMove?.Invoke(msg.Character ?? Character.Guard, (short)(msg.Value ?? -1));
+                        break;
+
+                    case "move_timer":
+                        MoveTimer?.Invoke(msg.Value ?? 99);
                         break;
 
                     default:

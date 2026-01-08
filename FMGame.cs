@@ -27,8 +27,6 @@ public class FMGame : Game
     public MouseStateWrapper MouseState { get; private set; }
     public AudioController Audio { get; private set; }
 
-    public static bool Active { get; private set; }
-
     public NetworkClient Client { get; private set; }
 
     /**
@@ -185,7 +183,6 @@ public class FMGame : Game
 
     protected override void Update(GameTime gameTime)
     {
-        Active = IsActive;
         MouseState.SetMouseState(Mouse.GetState());
         MouseExtended.Update();
         KeyboardExtended.Update();

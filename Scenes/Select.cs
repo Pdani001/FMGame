@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
-public class Select(FMGame game) : GameScreen(game)
+public class Select(FMGame game, bool lobby = true) : GameScreen(game)
 {
     BitmapFont nunito;
     SizeF size;
@@ -151,8 +151,7 @@ public class Select(FMGame game) : GameScreen(game)
             Y = 606,
             Width = 672,
             Height = 30,
-            Placeholder = "Press ENTER to send",
-            MaxNumberOfLines = 1
+            Placeholder = "Press ENTER to send"
         };
 
         var messageboxvisual = (TextBoxVisual)MessageBox.Visual;
@@ -187,7 +186,15 @@ public class Select(FMGame game) : GameScreen(game)
             }
         };
 
-        ScrollView.AddToRoot();
+        if (lobby)
+            ChatMessage("Welcome to Fazbear Multiplayer!");
+        else
+        {
+            game.Audio.StopAll();
+            ChatMessage("> Game aborted.");
+        }
+
+            ScrollView.AddToRoot();
         MessageBox.AddToRoot();
 
         base.LoadContent();
@@ -233,7 +240,13 @@ public class Select(FMGame game) : GameScreen(game)
 
     private void Client_GameCountdown(int seconds)
     {
-        Debug.WriteLine($"> Countdown: {seconds}");
+        if(seconds == -1)
+        {
+            ChatMessage($"> Game start aborted.");
+            return;
+        }
+        var append = seconds > 1 ? "s" : "";
+        ChatMessage($"> The game begins in {seconds} second{append}");
     }
 
     private void Client_CharacterSelected(Client user, Character character)
@@ -286,11 +299,11 @@ public class Select(FMGame game) : GameScreen(game)
 
     private void MouseClicked(object sender, MouseEventArgs e)
     {
-        Vector2 position = game.MouseState.Position;
-        if (e.Button != MouseButton.Left)
+        if (e.Button != MouseButton.Left || !game.IsActive)
         {
             return;
         }
+        Vector2 position = game.MouseState.Position;
         if (backButton.Contains(position))
         {
             ScreenManager.ReplaceScreen(new Menu(game, true));
@@ -308,7 +321,8 @@ public class Select(FMGame game) : GameScreen(game)
             {
                 if (isCrossed[i])
                 {
-                    error.Play();
+                    game.Audio.Play(error);
+                    ChatMessage($"> {(Character)i} not yet playable.");
                 }
                 else
                 {

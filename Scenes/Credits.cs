@@ -69,15 +69,18 @@ Menu music created by:
                 ScreenManager.CloseScreen();
         }
         bool hit = false;
-        foreach(var credit in credits)
+        if (game.IsActive)
         {
-            if (credit.Item1.Contains(game.MouseState.Position))
+            foreach (var credit in credits)
             {
-                hit = true;
-                Mouse.SetCursor(MouseCursor.Hand);
-                if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
-                    credit.Item2();
-                break;
+                if (credit.Item1.Contains(game.MouseState.Position))
+                {
+                    hit = true;
+                    Mouse.SetCursor(MouseCursor.Hand);
+                    if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+                        credit.Item2();
+                    break;
+                }
             }
         }
         if (!hit)

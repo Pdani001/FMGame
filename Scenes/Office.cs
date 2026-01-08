@@ -15,6 +15,7 @@ using ReFMGame.Network;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
@@ -53,8 +54,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private SoundEffect nose;
     private SoundEffect error;
     private SoundEffect door;
-    private SoundEffect power_sound;
-    private SoundEffect power_ambience;
+    private SoundEffect powerdown_sound;
+    private SoundEffect powerdown_ambience;
     private SoundEffect musicbox;
     private SoundEffect deepsteps;
     private SoundEffect windowscare;
@@ -84,8 +85,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private readonly Rectangle CamFlipStart = new(170, 650, 792, 82);
     private readonly Rectangle CamFlipReset = new(98, 550, 1070, 82);
 
-    private bool GameReady = false;
-
     private readonly (Character, TextureAnimation)[] JumpscareList = new (Character, TextureAnimation)[4];
     private TextureAnimation ActiveJumpscare;
     private Character Jumpscared = Character.None;
@@ -103,6 +102,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private bool CameraDirection = true;
     private bool BlockCamFlip = false;
     private byte EastHall_light = 0;
+    private int MoveTime = 99;
 
     private readonly TextureAnimation[] CameraList = new TextureAnimation[11];
     private Texture2D cam_dark;
@@ -136,7 +136,14 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     public override void Draw(GameTime gameTime)
 	{
-		GraphicsDevice.SetRenderTarget(officeTarget);
+#if DEBUG
+        if(bg_texture == null)
+        {
+            Debug.WriteLine("!!! bg_texture is NULL !!!");
+            return;
+        }
+#endif
+        GraphicsDevice.SetRenderTarget(officeTarget);
         game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);
 		// Draw targets behind the perspective effect here!
         if (!CameraActive)
@@ -171,8 +178,31 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         // Draw overlays here!
         if (!PowerDown && !JumpscareRunning)
         {
-            game.SpriteBatch.DrawString(smallFont, "Usage:", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
-            game.SpriteBatch.Draw(usage_texture, new(112, 666), usage_meter[Usage - 1], Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+            if (Character == Character.Guard)
+            {
+                game.SpriteBatch.DrawString(smallFont, "Usage:", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+                game.SpriteBatch.Draw(usage_texture, new(112, 666), usage_meter[Usage - 1], Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+            }
+            else
+            {
+                if (ActiveView <= 10)
+                {
+                    if (MoveTime > 0)
+                    {
+                        string move = $"{MoveTime}".PadLeft(2);
+                        string padding = MoveTime > 1 ? "s" : "";
+                        game.SpriteBatch.DrawString(smallFont, $"You can move in {move} second{padding}", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+                    }
+                    else
+                    {
+                        game.SpriteBatch.DrawString(smallFont, $"You can move now!", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+                    }
+                }
+                else
+                {
+                    game.SpriteBatch.DrawString(smallFont, $"Attack in progress, stand by!", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+                }
+            }
             string power = $"{Power / 10}".PadLeft(3);
             game.SpriteBatch.DrawString(smallFont, $"Power left:{power}%", new(33, 636), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
             string time = $"{Time} AM";
@@ -248,18 +278,14 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             }
         }
         game.SpriteBatch.End();
-        if (!GameReady)
-        {
-            GameReady = true;
-            PowerTimer.Start();
-            GameTimer.Start();
-        }
 	}
 
     float OfficeSpeed = 0;
 
     public override void Update(GameTime gameTime)
 	{
+        if (_keyboardListener == null || _mouseListener == null)
+            return;
         StaticOpacity = 150 + rng.Next(50) + (StaticMultiply * 15);
         if (doorCooldown > 0)
             doorCooldown--;
@@ -275,26 +301,31 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         cam_down_anim.Animate(gameTime);
         cam_foxy_run.Animate(gameTime);
         button_animation.Animate(gameTime);
-        if (leftDoorActive.Running)
+        if (Character == Character.Guard)
         {
-            leftDoorActive.Animate(gameTime);
-            left_door_texture = leftDoorActive[leftDoorActive.Index];
-        }
-        if (rightDoorActive.Running)
-        {
-            rightDoorActive.Animate(gameTime);
-            right_door_texture = rightDoorActive[rightDoorActive.Index];
-        }
-        if (!CameraActive && !JumpscareRunning)
-        {
-            float office_check = (float)(officePosition + (OfficeSpeed * gameTime.ElapsedGameTime.TotalSeconds));
-            if (office_check > 320)
-                office_check = 320;
-            else if (office_check < 0)
-                office_check = 0;
-            else
-                UpdatePanelCheck();
-            officePosition = office_check;
+            if (leftDoorActive?.Running == true)
+            {
+                leftDoorActive.Animate(gameTime);
+                left_door_texture = leftDoorActive[leftDoorActive.Index];
+            }
+            if (rightDoorActive?.Running == true)
+            {
+                rightDoorActive.Animate(gameTime);
+                right_door_texture = rightDoorActive[rightDoorActive.Index];
+            }
+            if (!CameraActive && !JumpscareRunning)
+            {
+                float office_check = (float)(officePosition + (OfficeSpeed * gameTime.ElapsedGameTime.TotalSeconds));
+                if (office_check > 320)
+                    office_check = 320;
+                else if (office_check < 0)
+                    office_check = 0;
+                else
+                    UpdatePanelCheck();
+                officePosition = office_check;
+            }
+            if (LeftLight || RightLight)
+                LightFlicker();
         }
         if(!CameraTimer.Enabled)
         {
@@ -311,10 +342,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             }
             cameraPosition = camera_check;
         }
-        if(LeftLight || RightLight)
-            LightFlicker();
         if (PowerDown && MusicBoxState > 0 && MusicBoxState < 3)
-            CheckMusicBoxState((float)gameTime.ElapsedGameTime.TotalSeconds);
+            UpdateMusicBox((float)gameTime.ElapsedGameTime.TotalSeconds);
         CheckFoxy(gameTime);
         if (IsJumpscared)
         {
@@ -350,22 +379,10 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 }
             }
         }
-        if(cam_garble_sound != null)
-        {
-            GarbleElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (GarbleElapsed >= 3f)
-            {
-                GarbleElapsed = 0f;
-                cam_garble_sound.Stop();
-                cam_garble_sound = null;
-                ChangeCameraView(Character == Character.Foxy ? Foxy : ActiveView, false);
-            }
-        }
     }
 
     private float ForceJumpscareElapsed = 0f;
     private float FreddyJumpscareTimeout = 0f;
-    private float GarbleElapsed = 0f;
     private float JumpscareElapsed = 0f;
     private float MusicBoxElapsed = 0f;
     private float FoxyWaitElapsed = 0f;
@@ -409,43 +426,32 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             }
             Foxy = 5;
             Jumpscared = Character.Foxy;
-            BlockControls |= 1;
+            //BlockControls |= 1;
+            BlockLeft = true;
             if (LeftLight)
                 ToggleLight(true);
         }
     }
 
-    private void CheckMusicBoxState(float elapsed)
+    private bool MusicBoxRunning = false;
+
+    private void UpdateMusicBox(float elapsed)
     {
         if(MusicBoxState == 1)
         {
-            if (game.Audio.IsPlaying(musicbox.Name))
+            if (MusicBoxRunning)
             {
                 MusicBoxElapsed += elapsed;
                 if (MusicBoxElapsed >= 0.05f)
                 {
-                    MusicBoxElapsed = 0f;
+                    MusicBoxElapsed -= .05f;
                     bg_texture = officeControl[rng.Next(4) + 1 == 1 ? 5 : 6];
                 }
                 return;
             }
-            game.Audio.Play(musicbox, unique: true);
-            MusicBoxTimer.Enabled = true;
         }
         else
         {
-            MusicBoxElapsed += elapsed;
-            if (MusicBoxElapsed >= 0.33f)
-            {
-                MusicBoxElapsed = 0f;
-                MusicBoxState++;
-                bg_texture = officeControl[7];
-                light_sound.Volume = 0;
-                game.Audio.Play(deepsteps);
-                MusicBoxTimer.Interval = 2000;
-                MusicBoxTimer.Enabled = true;
-                return;
-            }
             if (game.Audio.IsPlaying(musicbox.Name))
             {
                 game.Audio.StopAll(name=>name!="office/doors/light");
@@ -468,12 +474,14 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         if (rng.Next(10) + 1 == 1)
         {
             bg_texture = officeControl[0];
-            light_sound.Volume = 0;
+            if (light_sound != null)
+                light_sound.Volume = 0;
         }
         else
         {
             bg_texture = officeControl[lightIndex];
-            light_sound.Volume = 1;
+            if (light_sound != null)
+                light_sound.Volume = 1;
         }
     }
 
@@ -493,6 +501,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void ToggleLight(bool left)
     {
+        if (Character != Character.Guard)
+            return;
         if (!RightLight && !LeftLight)
         {
             Usage++;
@@ -513,7 +523,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 }
                 lightIndex++;
             }
-            light_sound.Volume = !LeftLight ? 0 : 1;
+            if (light_sound != null)
+                light_sound.Volume = !LeftLight ? 0 : 1;
         }
         else
         {
@@ -531,7 +542,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 }
                 lightIndex++;
             }
-            light_sound.Volume = !RightLight ? 0 : 1;
+            if (light_sound != null)
+                light_sound.Volume = !RightLight ? 0 : 1;
         }
         if (!PowerDown)
             bg_texture = officeControl[lightIndex];
@@ -543,7 +555,9 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void ToggleDoor(bool left, bool right)
     {
-        if(left != LeftDoor)
+        if (Character != Character.Guard)
+            return;
+        if (left != LeftDoor)
         {
             LeftDoor = left;
             if (LeftDoor)
@@ -591,7 +605,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 cam_down_anim.Reset();
             }
             ToggleCamera(false);
-            PowerTimer.Stop();
             Power = 0;
             bg_texture = officeControl[5];
             PowerDown = true;
@@ -610,28 +623,10 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                     right_door_texture.SetData([Color.Transparent]);
                 };
             ToggleDoor(false, false);
-            fan_sound.Stop();
-            game.Audio.Play(power_sound);
-            game.Audio.Play(power_ambience, volume: 0.5f);
-            MusicBoxTimer.Enabled = true;
-        }
-    }
-
-    private void CheckCounter()
-    {
-        if (TimeCounter >= 86)
-        {
-            TimeCounter = 1;
-            if (Time == 12)
-                Time = 1;
-            else if (Time == 5)
-            {
-                Time++;
-                GameTimer.Stop();
-                ScreenManager.ReplaceScreen(new NextDay(game, game.GetScreenshot()));
-            }
-            else
-                Time++;
+            fan_sound?.Stop();
+            game.Audio.Play(powerdown_sound);
+            game.Audio.Play(powerdown_ambience, volume: 0.5f);
+            //MusicBoxTimer.Enabled = true;
         }
     }
 
@@ -641,6 +636,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             ToggleLight(LeftLight);
         Usage++;
         CameraActive = true;
+        game.Client.SetCameraActive(CameraActive);
         ChangeCameraView(ActiveView);
         if (IsJumpscared)
             PlayRobotVocal();
@@ -650,6 +646,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void ToggleCamera(bool active)
     {
+        if (Character != Character.Guard)
+            return;
         BlockCamFlip = true;
         if (CameraActive == active)
             return;
@@ -661,7 +659,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             cam_down_anim.Stop();
             cam_up_anim.Reset();
             cam_sound = game.Audio.Play(cam_up_sound);
-            fan_sound.Volume = .1f;
+            if(fan_sound != null)
+                fan_sound.Volume = .1f;
         }
         else
         {
@@ -669,9 +668,11 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 cam_sound.Stop();
             cam_sound = game.Audio.Play(cam_down_sound);
             CameraActive = false;
+            game.Client.SetCameraActive(CameraActive);
             cam_up_anim.Stop();
             cam_down_anim.Reset();
-            fan_sound.Volume = .5f;
+            if(fan_sound != null)
+                fan_sound.Volume = .5f;
             Usage--;
         }
     }
@@ -746,7 +747,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         if (ActiveView <= 10)
         {
             int index = (int)CameraData.ExtractBits(0 + (3 * ActiveView), 2 + (3 * ActiveView));
-            if (cam_garble_sound == null || cam_garble_sound.IsDisposed)
+            if (!CameraGarble)
             {
                 if (Foxy == 3 && ActiveView == 3)
                 {
@@ -781,8 +782,9 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private SoundEffectInstance robot_vocal;
     private void PlayCameraGarble()
     {
-        if (!CameraActive || cam_garble_sound != null && !cam_garble_sound.IsDisposed)
+        if (!CameraActive || CameraGarble)
             return;
+        CameraGarble = true;
         cam_garble_sound = game.Audio.Play(garbleSounds[rng.Next(garbleSounds.Length)]);
         camera_texture = cam_dark;
     }
@@ -797,16 +799,16 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private bool LeftDoor = false;
     private bool LeftLight = false;
 
-    private int BlockControls = 0;
-    private bool BlockLeft => (BlockControls & 1) == 1;
-    private bool BlockRight => (BlockControls & 2) == 2;
+    //private int BlockControls = 0;
+    private bool BlockLeft { get; set; }
+    private bool BlockRight { get; set; }
 
     private bool CameraActive = false;
+    private bool CameraGarble = false;
 
     private int LeftScare = 0;
     private int RightScare = 0;
 
-    private int TimeCounter = 0;
     private int Time = 12;
     private int Power = 999;
     private bool PowerDown = false;
@@ -818,8 +820,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 	private int StaticMultiply = 0;
     private Timer ScareTimer;
 	private Timer StaticOpacityTimer;
-	private Timer PowerTimer;
-	private Timer GameTimer;
+	private Timer HallwayTimer;
 	private Timer CameraTimer;
 	private Timer MusicBoxTimer;
     private readonly Random rng = new(Guid.NewGuid().GetHashCode());
@@ -850,17 +851,19 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     public void PreLoad(Action<bool> callback)
     {
         _keyboardListener = new KeyboardListener();
-        var settings = new MouseListenerSettings();
-        settings.DoubleClickMilliseconds = int.MinValue;
-        settings.DragThreshold = int.MaxValue;
+        var settings = new MouseListenerSettings
+        {
+            DoubleClickMilliseconds = int.MinValue,
+            DragThreshold = int.MaxValue
+        };
         _mouseListener = new MouseListener(settings);
         perspective = Content.Load<Effect>("office/shader");
         fan_texture = Content.Load<Texture2D>("office/fan_loop");
         nose = Content.Load<SoundEffect>("FreddyNose");
         error = Content.Load<SoundEffect>("error");
         door = Content.Load<SoundEffect>("office/doors/door");
-        power_sound = Content.Load<SoundEffect>("office/powerdown");
-        power_ambience = Content.Load<SoundEffect>("office/ambience2");
+        powerdown_sound = Content.Load<SoundEffect>("office/powerdown");
+        powerdown_ambience = Content.Load<SoundEffect>("office/ambience2");
         musicbox = Content.Load<SoundEffect>("office/musicbox");
         deepsteps = Content.Load<SoundEffect>("office/deepsteps");
         windowscare = Content.Load<SoundEffect>("office/windowscare");
@@ -940,29 +943,30 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
         bg_texture = officeControl[0];
         camera_texture = CameraList[0][0];
-        callback(true);
+        Task.Delay(10).ContinueWith(t =>
+        {
+            callback?.Invoke(true);
+        });
     }
 
     public override void LoadContent()
 	{
-        base.LoadContent();
         officeTarget = new(GraphicsDevice, game.WindowSize.X, game.WindowSize.Y);
 
         cam_map = new CamMap();
         cam_rec = new CamRec();
         fan_anim = new FanLoop();
-        fan_sound = game.Audio.Play(Content.Load<SoundEffect>("office/fan_sound"), volume: 0.5f, isLooped: true);
+        fan_sound = game.Audio.Play(Content.Load<SoundEffect>("office/fan_sound"), volume: Character == Character.Guard ? .5f : .02f, isLooped: true);
         light_sound = game.Audio.Play(Content.Load<SoundEffect>("office/doors/light"), volume: 0f, isLooped: true, unique: true);
 
         if(Character != Character.Guard)
         {
-            fan_sound.Volume = 0.02f;
             CameraActive = true;
         }
         switch (Character)
         {
             case Character.Guard:
-                ChangeCameraView(Guard);
+                ChangeCameraView(Guard,false);
                 break;
             case Character.Freddy:
                 ChangeCameraView(Freddy);
@@ -987,15 +991,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 		};
 		ScareTimer.AutoReset = true;
 		ScareTimer.Enabled = true;
-
-		PowerTimer = new Timer(1000);
-		PowerTimer.Elapsed += delegate
-		{
-            Power -= Usage;
-            CheckPower();
-        };
-		PowerTimer.AutoReset = true;
-		PowerTimer.Enabled = false;
 
         MusicBoxTimer = new Timer(5000);
         MusicBoxTimer.Elapsed += delegate
@@ -1024,20 +1019,18 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         MusicBoxTimer.AutoReset = true;
         MusicBoxTimer.Enabled = false;
 
-        GameTimer = new Timer(1000);
-        GameTimer.Elapsed += delegate
+        HallwayTimer = new Timer(1000);
+        HallwayTimer.Elapsed += delegate
         {
-            TimeCounter++;
-            CheckCounter();
             EastHall_light = (byte)rng.Next(2);
-            if(ActiveView == 3 && (cam_garble_sound == null || cam_garble_sound.IsDisposed))
+            if(ActiveView == 3 && !CameraGarble)
             {
                 int index = (int)CameraData.ExtractBits(0 + (3 * ActiveView), 2 + (3 * ActiveView));
                 camera_texture = CameraList[ActiveView][index+EastHall_light];
             }
         };
-        GameTimer.AutoReset = true;
-        GameTimer.Enabled = false;
+        HallwayTimer.AutoReset = true;
+        HallwayTimer.Enabled = true;
 
         CameraTimer = new Timer(4000);
         CameraTimer.Elapsed += delegate
@@ -1061,6 +1054,106 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         _keyboardListener.KeyPressed += KeyDebug;
         _mouseListener.MouseClicked += MouseClick;
         _mouseListener.MouseMoved += MouseMove;
+
+        game.Client.GameAbort += Client_GameAbort;
+        game.Client.GameState += Client_GameState;
+        game.Client.GameMusicbox += Client_GameMusicbox;
+        game.Client.RobotMove += Client_RobotMove;
+        game.Client.MoveTimer += Client_MoveTimer;
+        base.LoadContent();
+    }
+
+    private void Client_MoveTimer(int time)
+    {
+        MoveTime = time;
+    }
+
+    private void Client_RobotMove(Character character, short position)
+    {
+        if (character == Character.Guard)
+            return;
+        switch (character)
+        {
+            case Character.Freddy:
+                Freddy = position;
+                break;
+            case Character.Bonnie:
+                Bonnie = position;
+                break;
+            case Character.Chica:
+                Chica = position;
+                break;
+            case Character.Foxy:
+                Foxy = position;
+                break;
+        }
+        if(Character == character)
+            ChangeCameraView(position);
+    }
+
+    private void Client_GameMusicbox(int state)
+    {
+        MusicBoxState = (byte)state;
+        if (MusicBoxState == 1)
+        {
+            MusicBoxRunning = true;
+            game.Audio.Play(musicbox, unique: true);
+            MusicBoxTimer.Enabled = true;
+        }
+        else if (MusicBoxState == 3)
+        {
+            MusicBoxElapsed = 0f;
+            bg_texture = officeControl[7];
+            if (light_sound != null)
+                light_sound.Volume = 0;
+            game.Audio.Play(deepsteps);
+        }
+        else if (MusicBoxState == 4)
+        {
+            ScreenManager.ReplaceScreen(new FreddyScene(game));
+        }
+    }
+
+    private void Client_GameState(GameState state)
+    {
+        Time = state.Time;
+        if (Time == 6)
+        {
+            ScreenManager.ReplaceScreen(new NextDay(game, game.GetScreenshot()));
+            return;
+        }
+        Power = state.Power;
+        CheckPower();
+        BlockLeft = state.Left.Blocked;
+        BlockRight = state.Right.Blocked;
+        if(state.Left.Light != LeftLight)
+        {
+            ToggleLight(true);
+        }
+        if(state.Right.Light != RightLight)
+        {
+            ToggleLight(false);
+        }
+        ToggleDoor(state.Left.Door, state.Right.Door);
+        if(state.Camera.Garble != CameraGarble && Character == Character.Guard)
+        {
+            if (CameraGarble)
+            {
+                CameraGarble = false;
+                cam_garble_sound?.Stop();
+                cam_garble_sound = null;
+                ChangeCameraView(Character == Character.Foxy ? Foxy : ActiveView, false);
+            }
+            else
+            {
+                PlayCameraGarble();
+            }
+        }
+    }
+
+    private void Client_GameAbort()
+    {
+        ScreenManager.ReplaceScreen(new Select(game, false));
     }
 
     private void UpdatePanelCheck()
@@ -1162,13 +1255,15 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             {
                 if(TargetView != 255 && CameraButtons[TargetView].Contains(game.MouseState.Position))
                 {
-                    ChangeCameraView(TargetView);
+                    if(Character == Character.Guard)
+                        ChangeCameraView(TargetView);
+                    game.Client.ChangeCameraView(TargetView);
                 }
                 return;
             }
             if (Clamp(NosePos).Contains(game.MouseState.Position))
             {
-                nose.Play(1f, 0, 0);
+                game.Audio.Play(nose);
             }
             if (PowerDown) return;
             switch (ControlPanelCheck)
@@ -1178,40 +1273,44 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                     lightCooldown = 2;
                     if (BlockRight)
                     {
-                        error.Play(1f, 0, 0);
+                        game.Audio.Play(error);
                         return;
                     }
-                    ToggleLight(false);
+                    //ToggleLight(false);
+                    game.Client.SetLight(false, !RightLight);
                     return;
                 case 3:
                     if (lightCooldown > 0) return;
                     lightCooldown = 2;
                     if (BlockLeft)
                     {
-                        error.Play(1f, 0, 0);
+                        game.Audio.Play(error);
                         return;
                     }
-                    ToggleLight(true);
+                    //ToggleLight(true);
+                    game.Client.SetLight(true, !LeftLight);
                     return;
                 case 5:
                     if (doorCooldown > 0) return;
                     doorCooldown = 10;
                     if (BlockRight)
                     {
-                        error.Play(1f, 0, 0);
+                        game.Audio.Play(error);
                         return;
                     }
-                    ToggleDoor(LeftDoor, !RightDoor);
+                    //ToggleDoor(LeftDoor, !RightDoor);
+                    game.Client.SetDoor(false, !RightDoor);
                     return;
                 case 7:
                     if (doorCooldown > 0) return;
                     doorCooldown = 10;
                     if (BlockLeft)
                     {
-                        error.Play(1f, 0, 0);
+                        game.Audio.Play(error);
                         return;
                     }
-                    ToggleDoor(!LeftDoor, RightDoor);
+                    //ToggleDoor(!LeftDoor, RightDoor);
+                    game.Client.SetDoor(true, !LeftDoor);
                     return;
             }
         }
@@ -1219,51 +1318,41 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void KeyDebug(object s, KeyboardEventArgs e)
     {
-        if (!game.DebugMode || JumpscareRunning)
-            return;
-        if (!CameraActive && KeyboardExtended.GetState().IsKeyDown(Keys.B))
-        {
-            switch (e.Key)
-            {
-                case Keys.D0:
-                    BlockControls = BlockLeft || BlockRight ? BlockControls & ~3 : BlockControls | 3;
-                    if (LeftLight || RightLight)
-                        ToggleLight(LeftLight);
-                    ToggleDoor(false, false);
-                    break;
-                case Keys.D1:
-                    BlockControls = BlockLeft ? BlockControls & ~1 : BlockControls | 1;
-                    if (LeftLight)
-                        ToggleLight(true);
-                    ToggleDoor(false, RightDoor);
-                    break;
-                case Keys.D2:
-                    BlockControls = BlockRight ? BlockControls & ~2 : BlockControls | 2;
-                    if (RightLight)
-                        ToggleLight(false);
-                    ToggleDoor(LeftDoor, false);
-                    break;
-            }
-            return;
-        }
+        // TODO: reimplement this but on the server side !!
+        //if (!game.DebugMode || JumpscareRunning)
+        //    return;
+        //if (!CameraActive && KeyboardExtended.GetState().IsKeyDown(Keys.B))
+        //{
+        //    switch (e.Key)
+        //    {
+        //        case Keys.D0:
+        //            BlockControls = BlockLeft || BlockRight ? BlockControls & ~3 : BlockControls | 3;
+        //            if (LeftLight || RightLight)
+        //                ToggleLight(LeftLight);
+        //            ToggleDoor(false, false);
+        //            break;
+        //        case Keys.D1:
+        //            BlockControls = BlockLeft ? BlockControls & ~1 : BlockControls | 1;
+        //            if (LeftLight)
+        //                ToggleLight(true);
+        //            ToggleDoor(false, RightDoor);
+        //            break;
+        //        case Keys.D2:
+        //            BlockControls = BlockRight ? BlockControls & ~2 : BlockControls | 2;
+        //            if (RightLight)
+        //                ToggleLight(false);
+        //            ToggleDoor(LeftDoor, false);
+        //            break;
+        //    }
+        //    return;
+        //}
         switch (e.Key)
         {
             case Keys.P:
-                Power = 30;
+                game.Client.RunCheat("power");
                 break;
             case Keys.T:
-                Time = 5;
-                TimeCounter = 80;
-                break;
-            case Keys.M:
-                if (Foxy < 3)
-                {
-                    if(ActiveView == 2)
-                        PlayCameraGarble();
-                    Foxy++;
-                    if (Foxy == 3 && ActiveView == 3)
-                        PlayCameraGarble();
-                }
+                game.Client.RunCheat("time");
                 break;
         }
     }
@@ -1273,15 +1362,20 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         base.Dispose();
         GC.SuppressFinalize(this);
         CameraTimer?.Dispose();
-        GameTimer?.Dispose();
+        HallwayTimer?.Dispose();
         ScareTimer?.Dispose();
-        PowerTimer?.Dispose();
         StaticOpacityTimer?.Dispose();
         MusicBoxTimer?.Dispose();
         _keyboardListener.KeyPressed -= KeyDebug;
         _mouseListener.MouseClicked -= MouseClick;
         _mouseListener.MouseMoved -= MouseMove;
         cam_up_anim.AnimationFinished -= CamUpFinish;
+
+        game.Client.GameAbort -= Client_GameAbort;
+        game.Client.GameState -= Client_GameState;
+        game.Client.GameMusicbox -= Client_GameMusicbox;
+        game.Client.RobotMove -= Client_RobotMove;
+        game.Client.MoveTimer -= Client_MoveTimer;
     }
 
     private Rectangle Clamp(Rectangle r)

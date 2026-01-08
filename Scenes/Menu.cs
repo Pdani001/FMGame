@@ -67,12 +67,12 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         if (start.Contains(game.MouseState.Position))
         {
             startPadding = " >> ";
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
                 ScreenManager.ShowScreen(new Lobby(game, this));
             }
         }
-        if (game.DebugMode && KeyboardExtended.GetState().WasKeyPressed(Keys.S))
+        if (game.DebugMode && KeyboardExtended.GetState().WasKeyPressed(Keys.S) && game.IsActive)
         {
             ScreenManager.ReplaceScreen(new Loading(game));
         }
@@ -83,7 +83,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         if (credits.Contains(game.MouseState.Position))
         {
             creditsPadding = " >> ";
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
+            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
                 ScreenManager.ShowScreen(new Credits(game, this));
             }
