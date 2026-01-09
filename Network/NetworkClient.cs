@@ -161,8 +161,7 @@ namespace ReFMGame.Network
 
         public void RunCheat(string type)
         {
-            if(Self.IsAdmin)
-                Send(new { Session, type = "cheat#" + type.ToLower(), tick = lastServerTick });
+            Send(new { Session, type = "cheat#" + type.ToLower(), tick = lastServerTick });
         }
 
         // ---- Internal Send ----

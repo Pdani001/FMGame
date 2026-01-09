@@ -1325,9 +1325,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void KeyDebug(object s, KeyboardEventArgs e)
     {
-        // TODO: reimplement this but on the server side !!
-        //if (!game.DebugMode || JumpscareRunning)
-        //    return;
+        if (!game.DebugMode || JumpscareRunning)
+            return;
         //if (!CameraActive && KeyboardExtended.GetState().IsKeyDown(Keys.B))
         //{
         //    switch (e.Key)
