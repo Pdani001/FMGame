@@ -1,9 +1,9 @@
 # Fazbear Multiplayer (Game)
 The assets from the original Five Nights at Freddy's are Copyright (C) 2014 Scott Cawthon, other assets are Copyright their respective owners
 
-This project is still under construction, the multiplayer part does not exist yet, and even the singleplayer part is non functional!
+This project is still under construction! If you'd like to contribute, please get in touch!
 
-A dedicated server for use with the game is [available here](https://github.com/Pdani001/FMServer)
+A dedicated server for use with the game is [available here](https://github.com/Pdani001/FMServer).
 
 The code is subject to the following license
 ---

@@ -15,12 +15,12 @@ public abstract class FrameAnimation
             return;
         }
         Timer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-        if (Timer > Threshold)
+        if (Timer >= Threshold)
         {
             Index++;
             if (Index >= Frames.Length)
                 Index = 0;
-            Timer = 0;
+            Timer -= Threshold;
         }
     }
 

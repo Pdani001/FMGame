@@ -21,7 +21,7 @@ namespace ReFMGame.Network
         public Client Self { get; private set; } = null;
         private string Session => Self?.Id.ToString() ?? "";
 
-        public const int PROTOCOL_VERSION = 1;
+        public const int PROTOCOL_VERSION = 2;
 
         public bool IsConnected => _client?.IsConnected ?? false;
 
@@ -52,6 +52,8 @@ namespace ReFMGame.Network
         public event Action<int> GameMusicbox;
         public event Action<Character, short> RobotMove;
         public event Action<int> MoveTimer;
+        public event Action<Character> JumpscareStart;
+        public event Action JumpscareEnd;
 
         public event Action<Message> GenericMessageReceived;
 
@@ -150,6 +152,11 @@ namespace ReFMGame.Network
         public void ChangeCameraView(short target)
         {
             Send(new { Session, type = "move", value = target, tick = lastServerTick });
+        }
+
+        public void StartAttack()
+        {
+            Send(new { Session, type = "attack", tick = lastServerTick });
         }
 
         public void RunCheat(string type)
@@ -295,6 +302,14 @@ namespace ReFMGame.Network
 
                     case "move_timer":
                         MoveTimer?.Invoke(msg.Value ?? 99);
+                        break;
+
+                    case "jumpscare":
+                        JumpscareStart?.Invoke(msg.Character ?? Character.None);
+                        break;
+
+                    case "end_jumpscare":
+                        JumpscareEnd.Invoke();
                         break;
 
                     default:

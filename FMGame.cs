@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
@@ -21,7 +22,7 @@ public class FMGame : Game
     public SpriteBatch SpriteBatch;
     public RenderTarget2D RenderTarget { get; private set; }
     public Rectangle RenderTargetDestination { get; private set; }
-    private SpriteFont _font;
+    private BitmapFont _font;
     private SmartFramerate smartFPS;
     public GumService GumUI => GumService.Default;
     public MouseStateWrapper MouseState { get; private set; }
@@ -168,7 +169,7 @@ public class FMGame : Game
         RenderTargetDestination = GetRenderTargetDestination(WindowSize, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
         MouseState.SetRenderTargetDestination(RenderTargetDestination);
         MouseState.SetScreenScale(GetRenderTargetScale(WindowSize, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight));
-        _font = Content.Load<SpriteFont>("font/Consolas");
+        _font = Content.Load<BitmapFont>("font/debug");
         _screenManager.ClearScreens();
         _screenManager.ShowScreen(new Scenes.Splash(this));
     }
@@ -232,7 +233,7 @@ public class FMGame : Game
         {
             Color textColor = new((byte)~BaseColor.R, (byte)~BaseColor.G, (byte)~BaseColor.B);
             SpriteBatch.DrawString(_font, $"FPS: {FPS}", Vector2.One, textColor);
-            Vector2 mouse = new(Mouse.GetState().X + 10, Mouse.GetState().Y);
+            Vector2 mouse = new(Mouse.GetState().X + 12, Mouse.GetState().Y);
             SpriteBatch.DrawString(_font, $"{MouseState.Position.X};{MouseState.Position.Y}", mouse, textColor);
         }
 

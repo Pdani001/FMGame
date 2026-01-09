@@ -39,7 +39,7 @@ public abstract class TextureAnimation
         }
         Running = true;
         Timer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-        if (Timer > Threshold)
+        if (Timer >= Threshold)
         {
             Index++;
             if (Index >= Frames.Length)
@@ -52,7 +52,7 @@ public abstract class TextureAnimation
                 Index = 0;
             }
             OnAnimationRunning();
-            Timer = 0;
+            Timer -= Threshold;
         }
     }
 

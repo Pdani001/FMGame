@@ -46,9 +46,8 @@ public class FreddyScene(FMGame game) : GameScreen(game)
 
     CancellationTokenSource source = new();
 
-    public override void LoadContent()
-	{
-        base.LoadContent();
+    public void PreLoad()
+    {
         freddy = new JumpFreddyNopower(Content);
         scream = Content.Load<SoundEffect>("jumpscare/xscream");
         staticSound = Content.Load<SoundEffect>("static/static");
@@ -59,6 +58,12 @@ public class FreddyScene(FMGame game) : GameScreen(game)
         };
         blip = new CamBlip(Content);
         staticAnim = new StaticAnim(Content);
+    }
+
+    public override void LoadContent()
+	{
+        base.LoadContent();
+        PreLoad();
         freddy.Reset();
         game.Audio.Play(scream);
         Task.Delay(12000).WaitAsync(source.Token).ContinueWith(t => {
