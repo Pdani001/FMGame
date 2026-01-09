@@ -39,6 +39,11 @@ Fan-game created by:
 
 Menu music created by:
     @ZombieLord343
+
+Huge thanks to:
+    Bonnie20402
+    for reigniting my interest in the project
+    and helping me test it
 ", new(64, 260), Color.White, new(64, 260, 448, 414));
         game.SpriteBatch.Draw(menu.logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
         if(menu.RareBGM)
