@@ -28,8 +28,10 @@ public class MouseStateWrapper
         {
             float xScale = (float)gameSize.X / renderTargetDestination.Width;
             scaledMousePosition.X *= xScale;
+            scaledMousePosition.X = (int)Math.Round(scaledMousePosition.X, 0, MidpointRounding.AwayFromZero);
             float yScale = (float)gameSize.Y / renderTargetDestination.Height;
             scaledMousePosition.Y *= yScale;
+            scaledMousePosition.Y = (int)Math.Round(scaledMousePosition.Y, 0, MidpointRounding.AwayFromZero);
         }
         else
         {

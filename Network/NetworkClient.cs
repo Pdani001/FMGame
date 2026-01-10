@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -63,10 +64,33 @@ namespace ReFMGame.Network
         {
             if (IsConnected) return;
             Debug.WriteLine("NetworkClient: Attempting to connect...");
-            if(host != null)
-                _client = new TcpGameClient(host, port, _incoming);
+            if(host == null)
+            {
+                host = _host;
+                port = _port;
+            }
+            if (IPAddress.TryParse(host, out var address))
+            {
+                _client = new TcpGameClient(address.ToString(), port, _incoming);
+            }
             else
-                _client = new TcpGameClient(_host, _port, _incoming);
+            {
+                try
+                {
+                    var entry = Dns.GetHostEntry(host);
+                    if (entry.AddressList.Length == 0)
+                        throw new IndexOutOfRangeException("AddressList is empty");
+                    Debug.WriteLine($"Resolved host '{host}' to '{string.Join(',', entry.AddressList.ToList())}'");
+                    host = entry.AddressList[0].ToString();
+                    _client = new TcpGameClient(host, port, _incoming);
+                }
+                catch
+                {
+                    ConnectFailed?.Invoke("Failed to resolve host");
+                    return;
+                }
+            }
+            Debug.WriteLine($"Connecting to IP '{host}' on port {port}");
             if (!_client.ConnectAsync())
             {
                 ConnectFailed?.Invoke(_client.ErrorMessage);

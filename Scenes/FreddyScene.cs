@@ -49,8 +49,11 @@ public class FreddyScene(FMGame game) : GameScreen(game)
     public void PreLoad()
     {
         freddy = new JumpFreddyNopower(Content);
-        scream = Content.Load<SoundEffect>("jumpscare/xscream");
-        staticSound = Content.Load<SoundEffect>("static/static");
+        if (!game.Audio.NoAudio)
+        {
+            scream = Content.Load<SoundEffect>("jumpscare/xscream");
+            staticSound = Content.Load<SoundEffect>("static/static");
+        }
         freddy.AnimationFinished += delegate
         {
             game.Audio.StopAll();

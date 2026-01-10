@@ -37,6 +37,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
             game.SpriteBatch.DrawRectangle(backButton, new(163, 87, 171));
         }
         game.SpriteBatch.DrawString(small, InfoText, new(32, 640), Color.White);
+        game.SpriteBatch.DrawString(menu.verfont, menu.vertext, menu.verpos, Color.White);
         game.SpriteBatch.End();
 
         game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);

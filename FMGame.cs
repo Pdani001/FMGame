@@ -4,12 +4,14 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
+using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
 using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace ReFMGame;
@@ -17,6 +19,7 @@ namespace ReFMGame;
 public class FMGame : Game
 {
     public readonly Point WindowSize = new(1280, 720);
+    private readonly KeyboardListener _keyboardListener;
     private readonly GraphicsDeviceManager _graphics;
     private readonly ScreenManager _screenManager;
     public SpriteBatch SpriteBatch;
@@ -47,28 +50,32 @@ public class FMGame : Game
     */
     private const int TargetFPS = 60;
 
+    public string Version { get; private set; }
+
     public static string ContentRoot { get; private set; }
-    public static IServiceProvider ContentProvider { get; private set; }
 
     public KeyBind FullScreenBind = new(key: Keys.F11);
-    public KeyBind DebugBind = new(key: Keys.F1);
+    public KeyBind DebugBind = new(key: Keys.F1, ctrl: true);
     public bool DebugMode { get; private set; } = false;
 
     public FMGame()
     {
+        _keyboardListener = new KeyboardListener();
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
         IsFixedTimeStep = true;
         TargetElapsedTime = TimeSpan.FromTicks((long)(TimeSpan.TicksPerSecond / TargetFPS));
         ContentRoot = Content.RootDirectory;
-        ContentProvider = Content.ServiceProvider;
         MouseState = new(true);
         _screenManager = new ScreenManager();
         Components.Add(_screenManager);
 #if DEBUG
         DebugMode = true;
 #endif
+        string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        Version = version[..(version.Length - 2)];
+        Debug.WriteLine($"{Version}+{NetworkClient.PROTOCOL_VERSION}");
     }
 
     public bool IsFullscreen
@@ -133,11 +140,12 @@ public class FMGame : Game
         {
             Client.Disconnect();
         }
-        Client = new NetworkClient("142.132.195.36", 7121);
+        Client = new NetworkClient("pghost.org", 7121);
         if (!GumUI.IsInitialized)
         {
             GumUI.Initialize(this, DefaultVisualsVersion.V3);
             Audio = new AudioController();
+            _keyboardListener.KeyPressed += KeyPressed;
         }
         else
         {
@@ -150,6 +158,25 @@ public class FMGame : Game
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             WindowSubclass.Subclass(Window.Handle);
+        }
+    }
+
+    private void KeyPressed(object sender, KeyboardEventArgs e)
+    {
+        if (FullScreenBind.Key != Keys.None)
+        {
+            if (FullScreenBind.IsValid(e.Character))
+            {
+                ToggleFullScreen();
+            }
+        }
+        if (DebugBind.Key != Keys.None)
+        {
+            if (DebugBind.IsValid(e.Character))
+            {
+                DebugMode = !DebugMode;
+                Debug.WriteLine($"Debug mode set to '{DebugMode}'");
+            }
         }
     }
 
@@ -200,21 +227,7 @@ public class FMGame : Game
             }
         }
 
-        if (FullScreenBind.Key != Keys.None)
-        {
-            if (FullScreenBind.IsValid())
-            {
-                ToggleFullScreen();
-            }
-        }
-        if (DebugBind.Key != Keys.None)
-        {
-            if (DebugBind.IsValid())
-            {
-                DebugMode = !DebugMode;
-                Debug.WriteLine($"Debug mode set to '{DebugMode}'");
-            }
-        }
+        _keyboardListener.Update(gameTime);
 
         GumUI.Update(gameTime);
         base.Update(gameTime);

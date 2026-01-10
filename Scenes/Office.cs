@@ -787,7 +787,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private bool LeftDoor = false;
     private bool LeftLight = false;
 
-    //private int BlockControls = 0;
     private bool BlockLeft { get; set; }
     private bool BlockRight { get; set; }
 
@@ -801,7 +800,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private int Power = 999;
     private bool PowerDown = false;
 
-    private byte MusicBoxTry = 0;
     private byte MusicBoxState = 0;
 
     private int StaticOpacity = 0;
@@ -846,17 +844,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         _mouseListener = new MouseListener(settings);
         perspective = Content.Load<Effect>("office/shader");
         fan_texture = Content.Load<Texture2D>("office/fan_loop");
-        nose = Content.Load<SoundEffect>("FreddyNose");
-        error = Content.Load<SoundEffect>("error");
-        door = Content.Load<SoundEffect>("office/doors/door");
-        powerdown_sound = Content.Load<SoundEffect>("office/powerdown");
-        powerdown_ambience = Content.Load<SoundEffect>("office/ambience2");
-        musicbox = Content.Load<SoundEffect>("office/musicbox");
-        deepsteps = Content.Load<SoundEffect>("office/deepsteps");
-        windowscare = Content.Load<SoundEffect>("office/windowscare");
-        foxy_run = Content.Load<SoundEffect>("office/run");
-        knock = Content.Load<SoundEffect>("office/knock");
-        scream = Content.Load<SoundEffect>("jumpscare/xscream");
 
         cam_frame = Content.Load<Texture2D>("camera/frame");
         cam_rec_texture = Content.Load<Texture2D>("camera/rec");
@@ -873,9 +860,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
         cam_up_anim.AnimationFinished += CamUpFinish;
 
-        cam_blip_sound = Content.Load<SoundEffect>("camera/anim/blip");
-        cam_down_sound = Content.Load<SoundEffect>("camera/anim/down");
-        cam_up_sound = Content.Load<SoundEffect>("camera/anim/up");
 
         usage_texture = Content.Load<Texture2D>("office/usage");
         usage_meter = new UsageMeter();
@@ -903,15 +887,34 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         JumpscareList[2] = (Character.Chica, new JumpChica(Content));
         JumpscareList[3] = (Character.Foxy, new JumpFoxy(Content));
 
-        garbleSounds[0] = Content.Load<SoundEffect>("camera/garble1");
-        garbleSounds[1] = Content.Load<SoundEffect>("camera/garble2");
-        garbleSounds[2] = Content.Load<SoundEffect>("camera/garble3");
-        garbleSounds[3] = Content.Load<SoundEffect>("camera/garble4");
+        if (!game.Audio.NoAudio)
+        {
+            nose = Content.Load<SoundEffect>("FreddyNose");
+            error = Content.Load<SoundEffect>("error");
+            door = Content.Load<SoundEffect>("office/doors/door");
+            powerdown_sound = Content.Load<SoundEffect>("office/powerdown");
+            powerdown_ambience = Content.Load<SoundEffect>("office/ambience2");
+            musicbox = Content.Load<SoundEffect>("office/musicbox");
+            deepsteps = Content.Load<SoundEffect>("office/deepsteps");
+            windowscare = Content.Load<SoundEffect>("office/windowscare");
+            foxy_run = Content.Load<SoundEffect>("office/run");
+            knock = Content.Load<SoundEffect>("office/knock");
+            scream = Content.Load<SoundEffect>("jumpscare/xscream");
 
-        robotVocals[0] = Content.Load<SoundEffect>("office/vocal1");
-        robotVocals[1] = Content.Load<SoundEffect>("office/vocal2");
-        robotVocals[2] = Content.Load<SoundEffect>("office/vocal3");
-        robotVocals[3] = Content.Load<SoundEffect>("office/vocal4");
+            cam_blip_sound = Content.Load<SoundEffect>("camera/anim/blip");
+            cam_down_sound = Content.Load<SoundEffect>("camera/anim/down");
+            cam_up_sound = Content.Load<SoundEffect>("camera/anim/up");
+
+            garbleSounds[0] = Content.Load<SoundEffect>("camera/garble1");
+            garbleSounds[1] = Content.Load<SoundEffect>("camera/garble2");
+            garbleSounds[2] = Content.Load<SoundEffect>("camera/garble3");
+            garbleSounds[3] = Content.Load<SoundEffect>("camera/garble4");
+
+            robotVocals[0] = Content.Load<SoundEffect>("office/vocal1");
+            robotVocals[1] = Content.Load<SoundEffect>("office/vocal2");
+            robotVocals[2] = Content.Load<SoundEffect>("office/vocal3");
+            robotVocals[3] = Content.Load<SoundEffect>("office/vocal4");
+        }
 
         leftPanel = new LeftPanelControl(Content);
         rightPanel = new RightPanelControl(Content);
@@ -950,8 +953,13 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         cam_map = new CamMap();
         cam_rec = new CamRec();
         fan_anim = new FanLoop();
-        fan_sound = game.Audio.Play(Content.Load<SoundEffect>("office/fan_sound"), volume: Character == Character.Guard ? .5f : .02f, isLooped: true);
-        light_sound = game.Audio.Play(Content.Load<SoundEffect>("office/doors/light"), volume: 0f, isLooped: true, unique: true);
+        if (!game.Audio.NoAudio)
+        {
+            var fanSoundEffect = Content.Load<SoundEffect>("office/fan_sound");
+            fan_sound = game.Audio.Play(fanSoundEffect, volume: Character == Character.Guard ? .5f : .02f, isLooped: true);
+            var lightSoundEffect = Content.Load<SoundEffect>("office/doors/light");
+            light_sound = game.Audio.Play(lightSoundEffect, volume: 0f, isLooped: true, unique: true);
+        }
 
         if(Character != Character.Guard)
         {

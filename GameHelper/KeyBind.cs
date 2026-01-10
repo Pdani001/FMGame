@@ -2,14 +2,15 @@
 using MonoGame.Extended.Input;
 
 namespace ReFMGame.GameHelper;
-public class KeyBind(bool ctrl = false, bool alt = false, bool shift = false, Keys key = Keys.None)
+public class KeyBind(bool ctrl = false, bool alt = false, bool shift = false, Keys key = Keys.None, char? kchar = null)
 {
     public bool Ctrl { get; set; } = ctrl;
     public bool Alt { get; set; } = alt;
     public bool Shift { get; set; } = shift;
     public Keys Key { get; set; } = key;
+    public char? Char { get; set; } = kchar;
 
-    public bool IsValid()
+    public bool IsValid(char? kchar = null)
     {
         var keyboard = KeyboardExtended.GetState();
         if (
@@ -17,7 +18,7 @@ public class KeyBind(bool ctrl = false, bool alt = false, bool shift = false, Ke
             (Alt && keyboard.IsAltDown() || !Alt && !keyboard.IsAltDown()) &&
             (Shift && keyboard.IsShiftDown() || !Shift && !keyboard.IsShiftDown())
         )
-            if (keyboard.WasKeyPressed(Key))
+            if (keyboard.WasKeyPressed(Key) || (Char != null && Char == kchar))
             {
                 return true;
             }

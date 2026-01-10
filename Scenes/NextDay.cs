@@ -66,8 +66,11 @@ public class NextDay(FMGame game, Texture2D screenshot) : GameScreen(game)
         six = Content.Load<Texture2D>("nextday/6");
         am = Content.Load<Texture2D>("nextday/am");
         black = Content.Load<Texture2D>("nextday/black");
-        chime = Content.Load<SoundEffect>("nextday/chimes");
-        crowd = Content.Load<SoundEffect>("nextday/children");
+        if (!game.Audio.NoAudio)
+        {
+            chime = Content.Load<SoundEffect>("nextday/chimes");
+            crowd = Content.Load<SoundEffect>("nextday/children");
+        }
         game.Audio.Play(chime);
     }
 

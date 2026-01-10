@@ -117,7 +117,8 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         check = Content.Load<Texture2D>("select/checkmark");
         cross = Content.Load<Texture2D>("select/crossmark");
         ready = Content.Load<Texture2D>("select/ready");
-        error = Content.Load<SoundEffect>("error");
+        if(!game.Audio.NoAudio)
+            error = Content.Load<SoundEffect>("error");
 
         var settings = new MouseListenerSettings();
         settings.DoubleClickMilliseconds = int.MinValue;
@@ -132,6 +133,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         game.Client.GameCountdown += Client_GameCountdown;
         game.Client.GameStart += Client_GameStart;
         game.Client.ChatMessageReceived += Client_ChatMessageReceived;
+        game.Client.Disconnected += Client_Disconnected;
 
         ScrollView = new ScrollViewer
         {
@@ -198,6 +200,11 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         MessageBox.AddToRoot();
 
         base.LoadContent();
+    }
+
+    private void Client_Disconnected(string obj)
+    {
+        ScreenManager.ReplaceScreen(new Menu(game, true));
     }
 
     private void Client_ChatMessageReceived(Client user, string text)

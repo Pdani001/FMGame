@@ -1,16 +1,12 @@
-﻿using Gum.Forms.Controls;
-using Gum.Forms.DefaultVisuals.V3;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
-using MonoGameGum;
 using ReFMGame.Animations;
 using ReFMGame.GameHelper;
-using ReFMGame.Network;
 using System;
 using System.Diagnostics;
 using Timer = System.Timers.Timer;
@@ -24,10 +20,16 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
     public TextureAnimation bg_animation { get; private set; }
     public TextureAnimation static_animation { get; private set; }
     public BitmapFont bmfont { get; private set; }
+    public BitmapFont verfont { get; private set; }
+    public string vertext { get; private set; }
+    public Vector2 verpos { get; private set; }
     private Rectangle start = new(128, 352, 138, 32);
-    private Rectangle credits = new(128, 400, 172, 32);
+    private Rectangle settings = new(128, 400, 196, 32);
+    private Rectangle credits = new(128, 448, 172, 32);
     private string startPadding = "    ";
     private Vector2 startPadSize = Vector2.Zero;
+    private string settingsPadding = "    ";
+    private Vector2 settingsPadSize = Vector2.Zero;
     private string creditsPadding = "    ";
     private Vector2 creditsPadSize = Vector2.Zero;
     public override void Draw(GameTime gameTime)
@@ -40,10 +42,12 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         game.SpriteBatch.Draw(bg_texture, Vector2.Zero, null, bgcolor, 0, Vector2.Zero , 1, SpriteEffects.None, 0);
         
         game.SpriteBatch.DrawString(bmfont, startPadding+"Start", start.Location.ToVector2() - startPadSize, Color.White);
+        game.SpriteBatch.DrawString(bmfont, settingsPadding+"Settings", settings.Location.ToVector2() - settingsPadSize, Color.White);
         game.SpriteBatch.DrawString(bmfont, creditsPadding+"Credits", credits.Location.ToVector2() - creditsPadSize, Color.White);
         game.SpriteBatch.Draw(logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
         if(RareBGM)
             game.SpriteBatch.DrawString(bmfont, "57", new(79, 190), Color.Yellow);
+        game.SpriteBatch.DrawString(verfont, vertext, verpos, Color.White);
         game.SpriteBatch.End();
 
         Color staticcolor = Color.White;
@@ -66,10 +70,13 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         static_animation.Animate(gameTime);
         if (start.Contains(game.MouseState.Position))
         {
-            startPadding = " >> ";
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
                 ScreenManager.ShowScreen(new Lobby(game, this));
+            }
+            else
+            {
+                startPadding = " >> ";
             }
         }
         if (game.DebugMode && KeyboardExtended.GetState().WasKeyPressed(Keys.S) && game.IsActive)
@@ -79,13 +86,31 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         startPadSize = bmfont.MeasureString(startPadding);
         startPadSize.Y = 0;
 
+        settingsPadding = "    ";
+        if (settings.Contains(game.MouseState.Position))
+        {
+            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
+            {
+                ScreenManager.ShowScreen(new Settings(game, this));
+            }
+            else
+            {
+                settingsPadding = " >> ";
+            }
+        }
+        settingsPadSize = bmfont.MeasureString(settingsPadding);
+        settingsPadSize.Y = 0;
+
         creditsPadding = "    ";
         if (credits.Contains(game.MouseState.Position))
         {
-            creditsPadding = " >> ";
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
                 ScreenManager.ShowScreen(new Credits(game, this));
+            }
+            else
+            {
+                creditsPadding = " >> ";
             }
         }
         creditsPadSize = bmfont.MeasureString(creditsPadding);
@@ -147,6 +172,10 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         }
         game.Audio.StopAll();
         bmfont = Content.Load<BitmapFont>("font/b_volter32");
+        verfont = Content.Load<BitmapFont>("font/nunito16");
+        vertext = $"v{game.Version}";
+        var versize = verfont.MeasureString(vertext);
+        verpos = new(game.WindowSize.X - versize.Width - 5, game.WindowSize.Y - versize.Height);
         logo = Content.Load<Texture2D>("menu/logo");
         bg_animation = new MenuBgAnim(Content);
         try

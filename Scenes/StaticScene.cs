@@ -40,7 +40,8 @@ public class StaticScene(FMGame game) : GameScreen(game)
     public override void LoadContent()
 	{
         base.LoadContent();
-        staticSound = Content.Load<SoundEffect>("static/static");
+        if(!game.Audio.NoAudio)
+            staticSound = Content.Load<SoundEffect>("static/static");
         blip = new CamBlip(Content);
         staticAnim = new StaticAnim(Content);
         game.Audio.StopAll();
