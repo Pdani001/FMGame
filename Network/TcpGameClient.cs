@@ -44,7 +44,6 @@ namespace ReFMGame.Network
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
         {
-            Debug.WriteLine($"Received buffer [{string.Join(", ",buffer)}]");
             _buffer.Write(buffer, (int)offset, (int)size);
 
             while (true)
@@ -62,7 +61,6 @@ namespace ReFMGame.Network
                 try {
                     var msg = JsonSerializer.Deserialize<Message>(jsonBytes, JsonSerializerOptions);
                     var str = System.Text.Encoding.Default.GetString(jsonBytes);
-                    Debug.WriteLine($"Valid message: {str}");
                     _incoming.Enqueue(msg);
                 } catch (JsonException) { }
 

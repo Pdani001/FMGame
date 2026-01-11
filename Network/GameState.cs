@@ -6,33 +6,6 @@ using System.Threading.Tasks;
 
 namespace ReFMGame.Network
 {
-    /*
-        public object Snapshot ()
-        {
-            return new
-            {
-                time = NightTime,
-                power = Power,
-                right = new
-                {
-                    blocked = BlockRight,
-                    door = RightDoor,
-                    light = RightLight
-                },
-                left = new
-                {
-                    blocked = BlockLeft,
-                    door = LeftDoor,
-                    light = LeftLight
-                },
-                camera = new
-                {
-                    active = CameraActive,
-                    garble = CameraGarble,
-                },
-            };
-        }
-     */
     public class GameState
     {
         public int Time { get; set; }

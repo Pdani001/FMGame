@@ -52,8 +52,6 @@ public class FMGame : Game
 
     public string Version { get; private set; }
 
-    public static string ContentRoot { get; private set; }
-
     public KeyBind FullScreenBind = new(key: Keys.F11);
     public KeyBind DebugBind = new(key: Keys.F1, ctrl: true);
     public bool DebugMode { get; private set; } = false;
@@ -66,7 +64,6 @@ public class FMGame : Game
         IsMouseVisible = true;
         IsFixedTimeStep = true;
         TargetElapsedTime = TimeSpan.FromTicks((long)(TimeSpan.TicksPerSecond / TargetFPS));
-        ContentRoot = Content.RootDirectory;
         MouseState = new(true);
         _screenManager = new ScreenManager();
         Components.Add(_screenManager);
@@ -75,7 +72,7 @@ public class FMGame : Game
 #endif
         string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         Version = version[..(version.Length - 2)];
-        Debug.WriteLine($"{Version}+{NetworkClient.PROTOCOL_VERSION}");
+        Debug.WriteLine($"Running version {Version}+{NetworkClient.PROTOCOL_VERSION}");
     }
 
     public bool IsFullscreen
@@ -99,7 +96,6 @@ public class FMGame : Game
 
     private void ToggleFullScreen()
     {
-        Debug.WriteLine(_graphics.IsFullScreen ? "switching to windowed" : "switching to fullscreen");
         if (_graphics.IsFullScreen)
         {
             _graphics.PreferredBackBufferWidth = WindowSize.X;
@@ -113,7 +109,6 @@ public class FMGame : Game
             GumUI.Cursor.TransformMatrix = Matrix.CreateScale((float)WindowSize.X / CurrentWindowSize.X, (float)WindowSize.Y / CurrentWindowSize.Y, 1f);
         }
         _graphics.ToggleFullScreen();
-        Debug.WriteLine($"W{_graphics.PreferredBackBufferWidth} H{_graphics.PreferredBackBufferHeight}");
         Vector2 oldPos = MouseState.Position;
         GumUI.CanvasWidth = _graphics.PreferredBackBufferWidth;
         GumUI.CanvasHeight = _graphics.PreferredBackBufferHeight;
@@ -175,8 +170,12 @@ public class FMGame : Game
             if (DebugBind.IsValid(e.Character))
             {
                 DebugMode = !DebugMode;
-                Debug.WriteLine($"Debug mode set to '{DebugMode}'");
             }
+        }
+        if (DebugMode && e.Key == Keys.F2)
+        {
+            Debug.WriteLine("! RESTARTING GAME !");
+            Initialize();
         }
     }
 
@@ -221,10 +220,6 @@ public class FMGame : Game
         if (DebugMode) {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            if (keyboard.WasKeyPressed(Keys.F2)) {
-                Debug.WriteLine("! RESTARTING GAME !");
-                Initialize();
-            }
         }
 
         _keyboardListener.Update(gameTime);

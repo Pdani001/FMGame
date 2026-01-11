@@ -40,18 +40,15 @@ namespace ReFMGame.GameHelper
                 {
                     float wordWidth = font.MeasureString(word).Width;
 
-                    // Word fits in current line
                     if (font.MeasureString(currentLine + (currentLine.Length > 0 ? " " : "") + word).Width <= maxWidth)
                     {
                         currentLine += (currentLine.Length > 0 ? " " : "") + word;
                     }
-                    // Word too long for current line but fits on a new line
                     else if (wordWidth <= maxWidth)
                     {
                         lines.Add(currentLine);
-                        currentLine = word; // start new line without extra space
+                        currentLine = word;
                     }
-                    // Word too long: force-break by characters
                     else
                     {
                         foreach (char c in word)
@@ -61,7 +58,7 @@ namespace ReFMGame.GameHelper
                             if (font.MeasureString(currentLine + c).Width > maxWidth)
                             {
                                 lines.Add(currentLine);
-                                currentLine = ""; // reset fully for next chars
+                                currentLine = "";
                             }
 
                             currentLine += c;
