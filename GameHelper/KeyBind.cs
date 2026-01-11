@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.Input;
+using System.Collections.Generic;
 
 namespace ReFMGame.GameHelper;
 public class KeyBind(bool ctrl = false, bool alt = false, bool shift = false, Keys key = Keys.None, char? kchar = null)
@@ -23,5 +24,17 @@ public class KeyBind(bool ctrl = false, bool alt = false, bool shift = false, Ke
                 return true;
             }
         return false;
+    }
+
+    public override string ToString()
+    {
+        List<string> modifiers = [];
+        if (Ctrl)
+            modifiers.Add("CTRL");
+        if (Alt)
+            modifiers.Add("ALT");
+        if (Shift)
+            modifiers.Add("SHIFT");
+        return string.Join(" + ", modifiers) + (modifiers.Count > 0 ? " + " : "") + (Key != Keys.None ? Key.ToString() : (Char ?? ' '));
     }
 }

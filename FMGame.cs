@@ -139,6 +139,7 @@ public class FMGame : Game
         if (!GumUI.IsInitialized)
         {
             GumUI.Initialize(this, DefaultVisualsVersion.V3);
+            GumUI.UseKeyboardDefaults();
             Audio = new AudioController();
             _keyboardListener.KeyPressed += KeyPressed;
         }

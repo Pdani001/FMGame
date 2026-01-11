@@ -130,6 +130,8 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
         channelnameVisual.BackgroundColor = Color.Azure;
         channelnameVisual.ForegroundColor = Color.Black;
 
+        channelname.KeyDown += Channelname_KeyDown;
+
         refresh = new Button
         {
             X = 64,
@@ -138,6 +140,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
             Height = 10,
             Text = "Refresh",
             IsEnabled = false,
+            GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
         };
         var refreshVisual = (ButtonVisual)refresh.Visual;
         refreshVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
@@ -152,6 +155,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
             Height = 10,
             Text = "Create",
             IsEnabled = false,
+            GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
         };
         var createVisual = (ButtonVisual)create.Visual;
         createVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
@@ -166,6 +170,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
             Height = 10,
             Text = "Join",
             IsEnabled = false,
+            GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
         };
         var joinVisual = (ButtonVisual)join.Visual;
         joinVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
@@ -182,6 +187,14 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
         nickname.AddToRoot();
         channelname.AddToRoot();
         base.LoadContent();
+    }
+
+    private void Channelname_KeyDown(object sender, KeyEventArgs e)
+    {
+        if(e.Key == Microsoft.Xna.Framework.Input.Keys.Enter)
+        {
+            join.PerformClick();
+        }
     }
 
     private bool joining = false;
@@ -229,6 +242,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
         game.Client.ServerSecretAccepted -= Client_ServerSecretAccepted;
 #endif
 
+        channelname.KeyDown -= Channelname_KeyDown;
         refresh.Click -= Refresh_Click;
         create.Click -= Create_Click;
         join.Click -= Join_Click;
@@ -296,6 +310,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
         create.IsEnabled = true;
         refresh.IsEnabled = true;
         nickname.IsEnabled = true;
+        nickname.IsFocused = true;
         channelname.IsEnabled = true;
     }
 

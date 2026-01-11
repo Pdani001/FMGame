@@ -1,10 +1,13 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Gum.Forms.Controls;
+using Gum.Forms.DefaultVisuals.V3;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
+using MonoGameGum;
 
 namespace ReFMGame.Scenes;
 public class Settings(FMGame game, Menu menu) : GameScreen(game)
@@ -57,6 +60,8 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         }
     }
 
+    ScrollViewer ScrollView;
+    Button FullscreenBtn;
     public override void LoadContent()
     {
         small = Content.Load<BitmapFont>("font/nunito20");
@@ -64,12 +69,98 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         large = Content.Load<BitmapFont>("font/nunito32b");
         SizeF backSize = smallB.MeasureString("Back");
         backPos = new(64 - backSize.Width / 2, 24 - backSize.Height / 2);
+
+        ScrollView = new ScrollViewer
+        {
+            X = 88,
+            Y = 266,
+            Width = 1104,
+            Height = 410,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+        };
+        var scrollviewvisual = (ScrollViewerVisual)ScrollView.Visual;
+        scrollviewvisual.BackgroundColor = Color.Transparent;
+        ScrollBarVisual scrollBar = scrollviewvisual.VerticalScrollBarInstance;
+        scrollBar.UpButtonInstance.BackgroundColor = Styling.ActiveStyle.Colors.InputBackground;
+        scrollBar.UpButtonIcon.Color = Styling.ActiveStyle.Colors.TextPrimary;
+        scrollBar.DownButtonInstance.BackgroundColor = Styling.ActiveStyle.Colors.InputBackground;
+        scrollBar.DownButtonIcon.Color = Styling.ActiveStyle.Colors.TextPrimary;
+        scrollBar.ThumbInstance.BackgroundColor = Styling.ActiveStyle.Colors.InputBackground;
+
+        ScrollView.AddToRoot();
+
+        var panel = new StackPanel();
+        ScrollView.AddChild(panel);
+        panel.Height = 100;
+        panel.HeightUnits = Gum.DataTypes.DimensionUnitType.RelativeToChildren;
+        panel.Width = 100;
+        panel.WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent;
+        var panelVisual = panel.Visual;
+        panelVisual.ChildrenLayout = Gum.Managers.ChildrenLayout.AutoGridHorizontal;
+        panelVisual.AutoGridHorizontalCells = 2;
+        panelVisual.AutoGridVerticalCells = 1;
+        panelVisual.StackSpacing = 20;
+
+
+        var fullscreenLbl = new Label
+        {
+            Text = "Fullscreen Button",
+        };
+        var fullscreenLblVisual = (LabelVisual)fullscreenLbl.Visual;
+        fullscreenLblVisual.CustomFontFile = "font/ui20.fnt";
+        fullscreenLblVisual.UseCustomFont = true;
+        FullscreenBtn = new Button
+        {
+            Text = game.FullScreenBind.ToString(),
+            WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
+            Width = 50,
+        };
+        var fullscreenBtnVisual = (ButtonVisual)FullscreenBtn.Visual;
+        fullscreenBtnVisual.BackgroundColor = Styling.ActiveStyle.Colors.InputBackground;
+        fullscreenBtnVisual.ForegroundColor = Styling.ActiveStyle.Colors.TextPrimary;
+        fullscreenBtnVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
+        fullscreenBtnVisual.TextInstance.UseCustomFont = true;
+        panel.AddChild(fullscreenLbl);
+        panel.AddChild(FullscreenBtn);
+
+        panel.AddChild(new Label
+        {
+            Text = "",
+            Height = 1,
+            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
+        });
+        panel.AddChild(new Label
+        {
+            Text = "",
+            Height = 1,
+            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
+        });
+
+        panel.AddChild(new Label
+        {
+            Text = "Server",
+        });
+        panel.AddChild(new ComboBox
+        {
+            WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
+            Width = 50,
+            Items = {
+                "Main",
+                "Test",
+                //"Custom",
+            },
+            SelectedIndex = 0,
+        });
+
+
         base.LoadContent();
     }
 
     public override void UnloadContent()
     {
         Mouse.SetCursor(MouseCursor.Arrow);
+        ScrollView.RemoveFromRoot();
         base.UnloadContent();
     }
 }

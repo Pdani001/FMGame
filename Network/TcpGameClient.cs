@@ -62,7 +62,7 @@ namespace ReFMGame.Network
                     var msg = JsonSerializer.Deserialize<Message>(jsonBytes, JsonSerializerOptions);
                     var str = System.Text.Encoding.Default.GetString(jsonBytes);
                     _incoming.Enqueue(msg);
-                } catch (JsonException) { }
+                } catch (Exception) { }
 
                 var remaining = _buffer.Length - (length + 4);
                 var temp = new byte[remaining];
