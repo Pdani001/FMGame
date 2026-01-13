@@ -10,7 +10,10 @@ using MonoGameGum;
 using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -52,9 +55,27 @@ public class FMGame : Game
 
     public string Version { get; private set; }
 
-    public KeyBind FullScreenBind = new(key: Keys.F11);
-    public KeyBind DebugBind = new(key: Keys.F1, ctrl: true);
+    public readonly Dictionary<KeyBindKey, KeyBind> KeyBinds = new() {
+        {KeyBindKey.Fullscreen, new(key: Keys.F11)},
+        {KeyBindKey.Chat, new(key: Keys.T)},
+        {KeyBindKey.Debug, new(key: Keys.F1, ctrl: true) },
+    };
+    public bool UpdateKeyBind { get; set; } = false;
     public bool DebugMode { get; private set; } = false;
+    private int _server = 0;
+    public int ServerIndex { get => _server; set
+        {
+            _server = value;
+            UpdateClient();
+        }
+    }
+    private string _serverAddress = string.Empty;
+    public string CustomAddress { get => _serverAddress; set
+        {
+            _serverAddress = value;
+            UpdateClient();
+        }
+    }
 
     public FMGame()
     {
@@ -131,11 +152,12 @@ public class FMGame : Game
         _graphics.PreferredBackBufferWidth = WindowSize.X;
         _graphics.PreferredBackBufferHeight = WindowSize.Y;
         _graphics.ApplyChanges();
+        UpdateKeyBind = false;
         if (Client != null && Client.IsConnected)
         {
             Client.Disconnect();
         }
-        Client = new NetworkClient("pghost.org", 7121);
+        UpdateClient();
         if (!GumUI.IsInitialized)
         {
             GumUI.Initialize(this, DefaultVisualsVersion.V3);
@@ -157,26 +179,59 @@ public class FMGame : Game
         }
     }
 
+    private void UpdateClient()
+    {
+        if (Client != null && Client.IsConnected)
+        {
+            return;
+        }
+        switch (ServerIndex)
+        {
+            case 0:
+                Client = new NetworkClient("pghost.org", 7121);
+                break;
+            case 1:
+                Client = new NetworkClient("pghost.org", 7122);
+                break;
+            default:
+                Debug.WriteLine(CustomAddress);
+                var host = "";
+                var port = 7121;
+                try
+                {
+                    var uri = new Uri(CustomAddress);
+                    host = uri.Host;
+                    port = uri.Port;
+                }
+                catch (Exception) { }
+                Debug.WriteLine($"host = '{host}'; port = {port}");
+                Client = new NetworkClient(host, port);
+                break;
+        }
+    }
+
     private void KeyPressed(object sender, KeyboardEventArgs e)
     {
-        if (FullScreenBind.Key != Keys.None)
+        if (!UpdateKeyBind)
         {
-            if (FullScreenBind.IsValid(e.Character))
+            var bind = KeyBinds.Where(kvp => kvp.Value.IsValid(e.Character)).Select(kvp=>kvp.Key);
+            if(bind.Count() == 1)
+                switch (bind.First())
+                {
+                    case KeyBindKey.Fullscreen:
+                        ToggleFullScreen();
+                        break;
+                    case KeyBindKey.Debug:
+                        DebugMode = !DebugMode;
+                        break;
+                    default:
+                        return;
+                }
+            if (DebugMode && e.Key == Keys.F2)
             {
-                ToggleFullScreen();
+                Debug.WriteLine("! RESTARTING GAME !");
+                Initialize();
             }
-        }
-        if (DebugBind.Key != Keys.None)
-        {
-            if (DebugBind.IsValid(e.Character))
-            {
-                DebugMode = !DebugMode;
-            }
-        }
-        if (DebugMode && e.Key == Keys.F2)
-        {
-            Debug.WriteLine("! RESTARTING GAME !");
-            Initialize();
         }
     }
 
@@ -219,7 +274,7 @@ public class FMGame : Game
         Client.Update();
 
         if (DebugMode) {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (!UpdateKeyBind && keyboard.WasKeyPressed(Keys.Escape))
                 Exit();
         }
 

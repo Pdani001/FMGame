@@ -17,7 +17,7 @@ namespace ReFMGame.Network
 
         public Channel Channel { get; private set; } = null;
 
-        private readonly string Secret = "[9edp!J3qWd4)XWtW#sa@s@>PJaXEW]Ns0FzYi5{WEA4pfCjgbeEU3+exR)+ww2(";
+        private const string HashSalt = "[9edp!J3qWd4)XWtW#sa@s@>PJaXEW]Ns0FzYi5{WEA4pfCjgbeEU3+exR)+ww2(";
 
         public Client Self { get; private set; } = null;
         private string Session => Self?.Id.ToString() ?? "";
@@ -76,6 +76,8 @@ namespace ReFMGame.Network
             {
                 try
                 {
+                    if (string.IsNullOrEmpty(host))
+                        throw new UriFormatException("Invalid host/address");
                     var entry = Dns.GetHostEntry(host);
                     if (entry.AddressList.Length == 0)
                         throw new IndexOutOfRangeException("AddressList is empty");
@@ -227,7 +229,7 @@ namespace ReFMGame.Network
                         Debug.WriteLine("NetworkClient: Received challenge, sending auth...");
                         using (SHA256 sha256Hash = SHA256.Create())
                         {
-                            string hash = GetHash(sha256Hash, msg.Text+Secret);
+                            string hash = GetHash(sha256Hash, msg.Text+HashSalt);
                             Send(new { type = "auth", text = hash });
                             Debug.WriteLine("NetworkClient: Sent auth.");
                         }
