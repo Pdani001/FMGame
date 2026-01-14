@@ -22,7 +22,7 @@ namespace ReFMGame.Network
         public Client Self { get; private set; } = null;
         private string Session => Self?.Id.ToString() ?? "";
 
-        public const int PROTOCOL_VERSION = 2;
+        public const int PROTOCOL_VERSION = 3;
 
         public bool IsConnected => _client?.IsConnected ?? false;
 
@@ -54,6 +54,7 @@ namespace ReFMGame.Network
         public event Action<int> MoveTimer;
         public event Action<Character> JumpscareStart;
         public event Action JumpscareEnd;
+        public event Action FoxyRun;
 
         public event Action<Message> GenericMessageReceived;
 
@@ -333,7 +334,11 @@ namespace ReFMGame.Network
                         break;
 
                     case "end_jumpscare":
-                        JumpscareEnd.Invoke();
+                        JumpscareEnd?.Invoke();
+                        break;
+
+                    case "foxy_run":
+                        FoxyRun?.Invoke();
                         break;
 
                     default:

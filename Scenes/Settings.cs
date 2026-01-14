@@ -69,6 +69,7 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
     }
 
     ComboBox ServerSelect;
+    TextBox CustomServer;
     ScrollViewer ScrollView;
     Button FullscreenBtn;
     KeyBindKey? update = null;
@@ -175,15 +176,40 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         };
         ServerSelect.SelectionChanged += ServerSelect_SelectionChanged;
         panel.AddChild(ServerSelect);
+        panel.AddChild(new Label
+        {
+            Text = "",
+            Height = 1,
+            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
+        });
+        CustomServer = new TextBox
+        {
+            Placeholder = "IP:port",
+            WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
+            Width = 50,
+            IsVisible = game.ServerIndex == 2,
+            Text = game.CustomAddress,
+        };
+        CustomServer.TextChanged += CustomServer_TextChanged;
+        panel.AddChild(CustomServer);
 
 
         base.LoadContent();
+    }
+
+    private void CustomServer_TextChanged(object sender, EventArgs e)
+    {
+        if (game.ServerIndex != 2)
+            return;
+        game.CustomAddress = CustomServer.Text;
     }
 
     private void ServerSelect_SelectionChanged(object arg1, Gum.Wireframe.SelectionChangedEventArgs arg2)
     {
         Debug.WriteLine($"Server: #{ServerSelect.SelectedIndex}");
         game.ServerIndex = ServerSelect.SelectedIndex;
+        CustomServer.IsVisible = game.ServerIndex == 2;
+        CustomServer.Text = game.CustomAddress;
     }
 
     private readonly Keys[] _ignoreKey = [

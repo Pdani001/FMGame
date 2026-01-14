@@ -73,7 +73,8 @@ public class FMGame : Game
     public string CustomAddress { get => _serverAddress; set
         {
             _serverAddress = value;
-            UpdateClient();
+            if(ServerIndex == 2)
+                UpdateClient();
         }
     }
 
@@ -189,21 +190,27 @@ public class FMGame : Game
         {
             case 0:
                 Client = new NetworkClient("pghost.org", 7121);
+                CustomAddress = "";
                 break;
             case 1:
                 Client = new NetworkClient("pghost.org", 7122);
+                CustomAddress = "";
                 break;
             default:
                 Debug.WriteLine(CustomAddress);
                 var host = "";
                 var port = 7121;
-                try
+                if(IPEndPoint.TryParse(CustomAddress, out IPEndPoint ip))
                 {
-                    var uri = new Uri(CustomAddress);
-                    host = uri.Host;
-                    port = uri.Port;
+                    host = ip.Address.ToString();
+                    port = ip.Port;
+                }else
+                {
+                    var split = CustomAddress.Split(':');
+                    host = split[0];
+                    if(split.Length > 1 && !string.IsNullOrEmpty(split[1].Trim()))
+                        int.TryParse(split[1], out port);
                 }
-                catch (Exception) { }
                 Debug.WriteLine($"host = '{host}'; port = {port}");
                 Client = new NetworkClient(host, port);
                 break;

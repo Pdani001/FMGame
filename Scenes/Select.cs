@@ -39,7 +39,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         false,
         true,
         true,
-        true
+        false
     };
     readonly bool[] isReady =
     {

@@ -359,7 +359,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         }
         if (PowerDown && MusicBoxState > 0 && MusicBoxState < 3)
             UpdateMusicBox((float)gameTime.ElapsedGameTime.TotalSeconds);
-        CheckFoxy(gameTime);
+        if (ActiveView == 3 && CameraActive && cam_foxy_run.Running)
+            camera_texture = cam_foxy_run[cam_foxy_run.Index];
         if (IsJumpscared && ActiveJumpscare != null)
         {
             ActiveJumpscare.Animate(gameTime);
@@ -368,53 +369,51 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     }
 
     private float _musicboxElapsed = 0f;
-    private float FoxyWaitElapsed = 0f;
-    private short FoxyAttempt = 0;
 
-    private void CheckFoxy(GameTime gameTime)
-    {
-        if(Foxy == 3 && FoxyWaitElapsed < 10f)
-        {
-            FoxyWaitElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-        }
-        if(Foxy == 3 && FoxyWaitElapsed >= 10f)
-        {
-            Foxy++;
-        }
-        if (Foxy == 4 && FoxyWaitElapsed < 1.67f)
-        {
-            if(ActiveView == 3 && CameraActive && cam_foxy_run.Running)
-                camera_texture = cam_foxy_run[cam_foxy_run.Index];
-            FoxyWaitElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-        }
-        if(Foxy == 4 && FoxyWaitElapsed >= 1.67f)
-        {
-            FoxyWaitElapsed = 0;
-            if (LeftDoor)
-            {
-                Power -= 10 + FoxyAttempt * 13;
-                if (Power < 0)
-                    Power = 0;
-                CheckPower();
-                FoxyAttempt++;
-                game.Audio.Play(knock);
-                Foxy = (short)rng.Next(2);
-                if(Character == Character.Foxy)
-                    ChangeCameraView(Foxy);
-                if((ActiveView == 2 || ActiveView == 3) && CameraActive)
-                {
-                    PlayCameraGarble();
-                }
-                return;
-            }
-            Foxy = 5;
-            Jumpscared = Character.Foxy;
-            //BlockControls |= 1;
-            BlockLeft = true;
-            if (LeftLight)
-                ToggleLight(true);
-        }
-    }
+    //private void CheckFoxy(GameTime gameTime)
+    //{
+    //    if(Foxy == 3 && FoxyWaitElapsed < 10f)
+    //    {
+    //        FoxyWaitElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
+    //    }
+    //    if(Foxy == 3 && FoxyWaitElapsed >= 10f)
+    //    {
+    //        Foxy++;
+    //    }
+    //    if (Foxy == 4 && FoxyWaitElapsed < 1.67f)
+    //    {
+    //        if(ActiveView == 3 && CameraActive && cam_foxy_run.Running)
+    //            camera_texture = cam_foxy_run[cam_foxy_run.Index];
+    //        FoxyWaitElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
+    //    }
+    //    if(Foxy == 4 && FoxyWaitElapsed >= 1.67f)
+    //    {
+    //        FoxyWaitElapsed = 0;
+    //        if (LeftDoor)
+    //        {
+    //            Power -= 10 + FoxyAttempt * 13;
+    //            if (Power < 0)
+    //                Power = 0;
+    //            CheckPower();
+    //            FoxyAttempt++;
+    //            game.Audio.Play(knock);
+    //            Foxy = (short)rng.Next(2);
+    //            if(Character == Character.Foxy)
+    //                ChangeCameraView(Foxy);
+    //            if((ActiveView == 2 || ActiveView == 3) && CameraActive)
+    //            {
+    //                PlayCameraGarble();
+    //            }
+    //            return;
+    //        }
+    //        Foxy = 5;
+    //        Jumpscared = Character.Foxy;
+    //        //BlockControls |= 1;
+    //        BlockLeft = true;
+    //        if (LeftLight)
+    //            ToggleLight(true);
+    //    }
+    //}
 
     private bool MusicBoxRunning = false;
 
@@ -704,6 +703,11 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         switch (Character)
         {
             case Character.Guard:
+                if(target > 10)
+                {
+                    target = 10;
+                    ActiveView = target;
+                }
                 Guard = target;
                 break;
             case Character.Freddy:
@@ -737,21 +741,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             int index = (int)CameraData.ExtractBits(0 + (3 * ActiveView), 2 + (3 * ActiveView));
             if (!CameraGarble)
             {
-                if (Foxy == 3 && ActiveView == 3)
-                {
-                    if (!cam_foxy_run.Running)
-                    {
-                        game.Audio.Play(foxy_run);
-                        FoxyWaitElapsed = 0;
-                        cam_foxy_run.Reset();
-                        Foxy++;
-                    }
-                    camera_texture = cam_foxy_run[cam_foxy_run.Index];
-                }
-                else
-                {
+                if(!cam_foxy_run.Running)
                     camera_texture = CameraList[ActiveView][index];
-                }
             }
             else
                 camera_texture = cam_dark;
@@ -1038,7 +1029,19 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         game.Client.Disconnected += Client_Disconnected;
         game.Client.JumpscareStart += Client_JumpscareStart;
         game.Client.JumpscareEnd += Client_JumpscareEnd;
+        game.Client.FoxyRun += Client_FoxyRun;
         base.LoadContent();
+    }
+
+    private void Client_FoxyRun()
+    {
+        Debug.WriteLine("Foxy is running");
+        game.Audio.Play(foxy_run);
+        if (Character == Character.Guard || Character == Character.Foxy)
+        {
+            cam_foxy_run.Reset();
+            camera_texture = cam_foxy_run[cam_foxy_run.Index];
+        }
     }
 
     private void Client_JumpscareEnd()
@@ -1096,8 +1099,12 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 }
                 break;
             case Character.Foxy:
+                if(position < Foxy)
+                {
+                    game.Audio.Play(knock);
+                }
                 Foxy = position;
-                if (position == 5)
+                if (Foxy == 5)
                 {
                     Jumpscared = character;
                 }
@@ -1159,7 +1166,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 CameraGarble = false;
                 cam_garble_sound?.Stop();
                 cam_garble_sound = null;
-                ChangeCameraView(Character == Character.Foxy ? Foxy : ActiveView, false);
+                ChangeCameraView(ActiveView, false);
             }
             else
             {
@@ -1395,6 +1402,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         game.Client.Disconnected -= Client_Disconnected;
         game.Client.JumpscareStart -= Client_JumpscareStart;
         game.Client.JumpscareEnd -= Client_JumpscareEnd;
+        game.Client.FoxyRun -= Client_FoxyRun;
     }
 
     private Rectangle Clamp(Rectangle r)
