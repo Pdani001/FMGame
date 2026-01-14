@@ -359,6 +359,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         game.Client.GameCountdown -= Client_GameCountdown;
         game.Client.GameStart -= Client_GameStart;
         game.Client.ChatMessageReceived -= Client_ChatMessageReceived;
+        game.Client.Disconnected -= Client_Disconnected;
 
         ScrollView.RemoveFromRoot();
         MessageBox.RemoveFromRoot();
