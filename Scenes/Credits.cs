@@ -69,10 +69,9 @@ Huge thanks to:
     public override void Update(GameTime gameTime)
     {
         menu.static_animation.Animate(gameTime);
-        if (backButton.Contains(game.MouseState.Position))
+        if ((backButton.Contains(game.MouseState.Position) && MouseExtended.GetState().WasButtonPressed(MouseButton.Left)) || KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
         {
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
-                ScreenManager.CloseScreen();
+            ScreenManager.CloseScreen();
         }
         bool hit = false;
         if (game.IsActive)

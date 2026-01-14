@@ -3,6 +3,7 @@ using Gum.Forms.DefaultVisuals.V3;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
@@ -97,6 +98,8 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
     public override void Update(GameTime gameTime)
     {
         _mouseListener.Update(gameTime);
+        if(KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
+            ScreenManager.ReplaceScreen(new Menu(game, true));
     }
 
     ScrollViewer ScrollView;

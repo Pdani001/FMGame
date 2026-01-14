@@ -280,11 +280,6 @@ public class FMGame : Game
         Audio.Update();
         Client.Update();
 
-        if (DebugMode) {
-            if (!UpdateKeyBind && keyboard.WasKeyPressed(Keys.Escape))
-                Exit();
-        }
-
         _keyboardListener.Update(gameTime);
 
         GumUI.Update(gameTime);

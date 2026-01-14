@@ -253,7 +253,13 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
     private void KeyPressed(object sender, KeyboardEventArgs e)
     {
         if (!game.UpdateKeyBind)
+        {
+            if(e.Key == Keys.Escape)
+            {
+                ScreenManager.CloseScreen();
+            }
             return;
+        }
         if(e.Key == Keys.Escape)
         {
             game.UpdateKeyBind = false;

@@ -2,6 +2,7 @@
 using Gum.Forms.DefaultVisuals.V3;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
@@ -54,13 +55,10 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
     public override void Update(GameTime gameTime)
     {
         menu.static_animation.Animate(gameTime);
-        if (backButton.Contains(game.MouseState.Position))
+        if ((backButton.Contains(game.MouseState.Position) && MouseExtended.GetState().WasButtonPressed(MouseButton.Left)) || KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
         {
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
-            {
-                ScreenManager.CloseScreen();
-                game.Client.Disconnect();
-            }
+            ScreenManager.CloseScreen();
+            game.Client.Disconnect();
         }
     }
 

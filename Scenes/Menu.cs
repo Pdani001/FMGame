@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
+using MonoGameGum.Input;
 using ReFMGame.Animations;
 using ReFMGame.GameHelper;
 using System;
@@ -115,6 +116,12 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         }
         creditsPadSize = bmfont.MeasureString(creditsPadding);
         creditsPadSize.Y = 0;
+
+        if (game.DebugMode)
+        {
+            if (KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
+                game.Exit();
+        }
     }
 
     public bool RareBGM { get; private set; } = false;
