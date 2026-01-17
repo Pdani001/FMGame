@@ -12,9 +12,11 @@ using ReFMGame.Network;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime;
 using System.Runtime.InteropServices;
 
 namespace ReFMGame;
@@ -55,24 +57,19 @@ public class FMGame : Game
 
     public string Version { get; private set; }
 
-    public readonly Dictionary<KeyBindKey, KeyBind> KeyBinds = new() {
-        {KeyBindKey.Fullscreen, new(key: Keys.F11)},
-        {KeyBindKey.Chat, new(key: Keys.T)},
-        {KeyBindKey.Debug, new(key: Keys.F1, ctrl: true) },
-    };
+    public readonly Settings settings = new Settings();
+
     public bool UpdateKeyBind { get; set; } = false;
     public bool DebugMode { get; private set; } = false;
-    private int _server = 0;
-    public int ServerIndex { get => _server; set
+    public int ServerIndex { get => settings.ServerIndex; set
         {
-            _server = value;
+            settings.ServerIndex = value;
             UpdateClient();
         }
     }
-    private string _serverAddress = string.Empty;
-    public string CustomAddress { get => _serverAddress; set
+    public string CustomAddress { get => settings.CustomAddress; set
         {
-            _serverAddress = value;
+            settings.CustomAddress = value;
             if(ServerIndex == 2)
                 UpdateClient();
         }
@@ -92,6 +89,7 @@ public class FMGame : Game
 #if DEBUG
         DebugMode = true;
 #endif
+        settings = MethodHelper.EnsureJson("settings.json", SettingsContext.Default.Settings);
         string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         Version = version[..(version.Length - 2)];
         Debug.WriteLine($"Running version {Version}+{NetworkClient.PROTOCOL_VERSION}");
@@ -221,24 +219,27 @@ public class FMGame : Game
     {
         if (!UpdateKeyBind)
         {
-            var bind = KeyBinds.Where(kvp => kvp.Value.IsValid(e.Character)).Select(kvp=>kvp.Key);
-            if(bind.Count() == 1)
+            var bind = settings.KeyBinds.Where(kvp => kvp.Value.IsValid(e.Character)).Select(kvp=>kvp.Key);
+            if(bind.Any())
                 switch (bind.First())
                 {
-                    case KeyBindKey.Fullscreen:
+                    case BindKey.Fullscreen:
                         ToggleFullScreen();
                         break;
-                    case KeyBindKey.Debug:
+                    case BindKey.Debug:
                         DebugMode = !DebugMode;
+                        break;
+                    case BindKey.Screenshot:
+                        var path = MethodHelper.GetPath($"screenshots{Path.DirectorySeparatorChar}{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss_ffff")}.png");
+                        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                        var stream = new StreamWriter(path).BaseStream;
+                        GetScreenshot().SaveAsPng(stream, WindowSize.X, WindowSize.Y);
+                        stream.Close();
+                        stream.Dispose();
                         break;
                     default:
                         return;
                 }
-            if (DebugMode && e.Key == Keys.F2)
-            {
-                Debug.WriteLine("! RESTARTING GAME !");
-                Initialize();
-            }
         }
     }
 
@@ -267,7 +268,7 @@ public class FMGame : Game
     {
         // Dispose of the audio controller.
         Audio.Dispose();
-
+        MethodHelper.SaveJson("settings.json", settings, SettingsContext.Default.Settings);
         base.UnloadContent();
     }
 

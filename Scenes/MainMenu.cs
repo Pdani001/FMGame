@@ -13,7 +13,7 @@ using System.Diagnostics;
 using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
-public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
+public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : GameScreen(game)
 {
     public Texture2D bg_texture { get; private set; }
     public Texture2D logo { get; private set; }
@@ -63,7 +63,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         if (lobby)
         {
             lobby = false;
-            ScreenManager.ShowScreen(new Lobby(game, this));
+            ScreenManager.ShowScreen(new LobbyMenu(game, this));
             return;
         }
         Mouse.SetCursor(MouseCursor.Arrow);
@@ -73,16 +73,12 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         {
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
-                ScreenManager.ShowScreen(new Lobby(game, this));
+                ScreenManager.ShowScreen(new LobbyMenu(game, this));
             }
             else
             {
                 startPadding = " >> ";
             }
-        }
-        if (game.DebugMode && KeyboardExtended.GetState().WasKeyPressed(Keys.S) && game.IsActive)
-        {
-            ScreenManager.ReplaceScreen(new Loading(game));
         }
         startPadSize = bmfont.MeasureString(startPadding);
         startPadSize.Y = 0;
@@ -92,7 +88,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         {
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
-                ScreenManager.ShowScreen(new Settings(game, this));
+                ScreenManager.ShowScreen(new SettingsMenu(game, this));
             }
             else
             {
@@ -107,7 +103,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         {
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
             {
-                ScreenManager.ShowScreen(new Credits(game, this));
+                ScreenManager.ShowScreen(new CreditsMenu(game, this));
             }
             else
             {
@@ -124,7 +120,7 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
         }
     }
 
-    public bool RareBGM { get; private set; } = false;
+    public bool RareBGM { get; private set; } = rare;
     public int BGOpacity { get; private set; } = 0;
     public int StaticOpacity { get; private set; } = 0;
     private Timer BGOpacityTimer;
@@ -134,14 +130,6 @@ public class Menu(FMGame game, bool lobby = false) : GameScreen(game)
     public override void Initialize()
     {
         Mouse.SetCursor(MouseCursor.Arrow);
-        if (game.DebugMode)
-        {
-            RareBGM = rng.Next(3) == 0;
-        }
-        else
-        {
-            RareBGM = rng.Next(6) == 1;
-        }
         BGOpacityTimer = new Timer(90);
         BGOpacityTimer.Elapsed += (_, _) =>
         {

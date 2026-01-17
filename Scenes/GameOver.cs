@@ -34,7 +34,7 @@ public class GameOver(FMGame game, Texture2D screenshot) : GameScreen(game)
         float timer = (float)(elapsed - 1.01d);
         if(timer > 10f)
         {
-            ScreenManager.ShowScreen(new Menu(game));
+            ScreenManager.ShowScreen(new MainMenu(game));
         }
     }
 

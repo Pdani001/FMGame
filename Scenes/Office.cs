@@ -190,6 +190,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             }
             else
             {
+                game.SpriteBatch.DrawString(smallFont, $"You are {Character}", new(33, 602), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
                 if (ActiveView <= 10)
                 {
                     if (MoveTime > 0)
@@ -369,52 +370,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     }
 
     private float _musicboxElapsed = 0f;
-
-    //private void CheckFoxy(GameTime gameTime)
-    //{
-    //    if(Foxy == 3 && FoxyWaitElapsed < 10f)
-    //    {
-    //        FoxyWaitElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-    //    }
-    //    if(Foxy == 3 && FoxyWaitElapsed >= 10f)
-    //    {
-    //        Foxy++;
-    //    }
-    //    if (Foxy == 4 && FoxyWaitElapsed < 1.67f)
-    //    {
-    //        if(ActiveView == 3 && CameraActive && cam_foxy_run.Running)
-    //            camera_texture = cam_foxy_run[cam_foxy_run.Index];
-    //        FoxyWaitElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-    //    }
-    //    if(Foxy == 4 && FoxyWaitElapsed >= 1.67f)
-    //    {
-    //        FoxyWaitElapsed = 0;
-    //        if (LeftDoor)
-    //        {
-    //            Power -= 10 + FoxyAttempt * 13;
-    //            if (Power < 0)
-    //                Power = 0;
-    //            CheckPower();
-    //            FoxyAttempt++;
-    //            game.Audio.Play(knock);
-    //            Foxy = (short)rng.Next(2);
-    //            if(Character == Character.Foxy)
-    //                ChangeCameraView(Foxy);
-    //            if((ActiveView == 2 || ActiveView == 3) && CameraActive)
-    //            {
-    //                PlayCameraGarble();
-    //            }
-    //            return;
-    //        }
-    //        Foxy = 5;
-    //        Jumpscared = Character.Foxy;
-    //        //BlockControls |= 1;
-    //        BlockLeft = true;
-    //        if (LeftLight)
-    //            ToggleLight(true);
-    //    }
-    //}
-
     private bool MusicBoxRunning = false;
 
     private void UpdateMusicBox(float elapsed)
@@ -613,7 +568,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             game.Audio.Play(powerdown_ambience, volume: 0.5f);
             if (Character != Character.Guard)
                 ChangeCameraView(21);
-            //MusicBoxTimer.Enabled = true;
         }
     }
 
@@ -1063,7 +1017,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void Client_Disconnected(string obj)
     {
-        ScreenManager.ReplaceScreen(new Menu(game));
+        ScreenManager.ReplaceScreen(new MainMenu(game));
     }
 
     private void Client_MoveTimer(int time)
@@ -1342,31 +1296,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     {
         if (!game.DebugMode || JumpscareRunning)
             return;
-        //if (!CameraActive && KeyboardExtended.GetState().IsKeyDown(Keys.B))
-        //{
-        //    switch (e.Key)
-        //    {
-        //        case Keys.D0:
-        //            BlockControls = BlockLeft || BlockRight ? BlockControls & ~3 : BlockControls | 3;
-        //            if (LeftLight || RightLight)
-        //                ToggleLight(LeftLight);
-        //            ToggleDoor(false, false);
-        //            break;
-        //        case Keys.D1:
-        //            BlockControls = BlockLeft ? BlockControls & ~1 : BlockControls | 1;
-        //            if (LeftLight)
-        //                ToggleLight(true);
-        //            ToggleDoor(false, RightDoor);
-        //            break;
-        //        case Keys.D2:
-        //            BlockControls = BlockRight ? BlockControls & ~2 : BlockControls | 2;
-        //            if (RightLight)
-        //                ToggleLight(false);
-        //            ToggleDoor(LeftDoor, false);
-        //            break;
-        //    }
-        //    return;
-        //}
         switch (e.Key)
         {
             case Keys.P:

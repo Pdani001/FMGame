@@ -119,9 +119,9 @@ namespace ReFMGame.Network
             });
         }
 
-        public void JoinChannel(string name, string nick, bool hidden = false)
+        public void JoinChannel(string name, string nick, bool hidden = false, string password = "")
         {
-            Send(new { Session, type = "join_channel", channel = name, nick, hidden });
+            Send(new { Session, type = "join_channel", channel = name, nick, hidden, text = password });
         }
 
         public void LeaveChannel()

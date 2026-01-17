@@ -15,7 +15,7 @@ using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
-public class Settings(FMGame game, Menu menu) : GameScreen(game)
+public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
 {
     private KeyboardListener _keyboardListener;
     readonly Rectangle backButton = new(0, 0, 128, 48);
@@ -72,7 +72,8 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
     TextBox CustomServer;
     ScrollViewer ScrollView;
     Button FullscreenBtn;
-    KeyBindKey? update = null;
+    Button ScreenshotBtn;
+    BindKey? update = null;
     public override void LoadContent()
     {
         _keyboardListener = new KeyboardListener(new KeyboardListenerSettings { RepeatPress = false });
@@ -89,7 +90,7 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         {
             X = 88,
             Y = 266,
-            Width = 1104,
+            Width = 552,
             Height = 410,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
@@ -127,9 +128,9 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         fullscreenLblVisual.UseCustomFont = true;
         FullscreenBtn = new Button
         {
-            Text = game.KeyBinds[KeyBindKey.Fullscreen].ToString(),
+            Text = game.settings.KeyBinds[BindKey.Fullscreen].ToString(),
             WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
-            Width = 50,
+            Width = 100,
         };
         FullscreenBtn.Click += FullscreenBtn_Click;
         var fullscreenBtnVisual = (ButtonVisual)FullscreenBtn.Visual;
@@ -140,18 +141,32 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         panel.AddChild(fullscreenLbl);
         panel.AddChild(FullscreenBtn);
 
-        panel.AddChild(new Label
+        AddSpacing(panel);
+
+        var screenshotLbl = new Label
         {
-            Text = "",
-            Height = 1,
-            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
-        });
-        panel.AddChild(new Label
+            Text = "Screenshot Button",
+        };
+        var screenshotLblVisual = (LabelVisual)screenshotLbl.Visual;
+        screenshotLblVisual.CustomFontFile = "font/ui20.fnt";
+        screenshotLblVisual.UseCustomFont = true;
+        ScreenshotBtn = new Button
         {
-            Text = "",
-            Height = 1,
-            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
-        });
+            Text = game.settings.KeyBinds[BindKey.Screenshot].ToString(),
+            WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
+            Width = 100,
+        };
+        ScreenshotBtn.Click += ScreenshotBtn_Click;
+        var screenshotBtnVisual = (ButtonVisual)ScreenshotBtn.Visual;
+        screenshotBtnVisual.BackgroundColor = Styling.ActiveStyle.Colors.InputBackground;
+        screenshotBtnVisual.ForegroundColor = Styling.ActiveStyle.Colors.TextPrimary;
+        screenshotBtnVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
+        screenshotBtnVisual.TextInstance.UseCustomFont = true;
+        panel.AddChild(screenshotLbl);
+        panel.AddChild(ScreenshotBtn);
+
+
+        AddSpacing(panel);
 
         var serverLbl = new Label
         {
@@ -166,7 +181,7 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         ServerSelect = new ComboBox
         {
             WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
-            Width = 50,
+            Width = 100,
             Items = {
                 "Main",
                 "Test",
@@ -176,17 +191,12 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         };
         ServerSelect.SelectionChanged += ServerSelect_SelectionChanged;
         panel.AddChild(ServerSelect);
-        panel.AddChild(new Label
-        {
-            Text = "",
-            Height = 1,
-            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
-        });
+        AddSpacing(panel, false);
         CustomServer = new TextBox
         {
             Placeholder = "IP:port",
             WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
-            Width = 50,
+            Width = 100,
             IsVisible = game.ServerIndex == 2,
             Text = game.CustomAddress,
         };
@@ -232,12 +242,20 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
 
     private void RefreshText(KeyBind newbind)
     {
+        Button btn = null;
         switch (update)
         {
-            case KeyBindKey.Fullscreen:
-                FullscreenBtn.Text = string.IsNullOrEmpty(newbind.ToString()) ? "Press any key..." : newbind.ToString();
+            case BindKey.Fullscreen:
+                btn = FullscreenBtn;
+                break;
+            case BindKey.Screenshot:
+                btn = ScreenshotBtn;
                 break;
                 // todo: add game chat
+        }
+        if(btn != null)
+        {
+            btn.Text = string.IsNullOrEmpty(newbind.ToString()) ? "Press any key..." : newbind.ToString();
         }
     }
 
@@ -263,8 +281,7 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         if(e.Key == Keys.Escape)
         {
             game.UpdateKeyBind = false;
-            if(update == KeyBindKey.Fullscreen)
-                FullscreenBtn.Text = game.KeyBinds[update.Value].ToString();
+            RefreshText(game.settings.KeyBinds[update.Value]);
             update = null;
             return;
         }
@@ -275,22 +292,18 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         {
             key = e.Key;
         }
-        if(game.DebugMode && e.Key == Keys.F2)
-        {
-            key = Keys.None;
-        }
         if (_ignoreChar.Contains(e.Key))
         {
             Character = null;
         }
         var newbind = new KeyBind(keyboard.IsControlDown(), keyboard.IsShiftDown(), key, Character);
-        if (game.KeyBinds.Any(x => x.Value.Equals(newbind)))
+        if (game.settings.KeyBinds.Any(x => x.Value.Equals(newbind) && x.Key != update))
             return;
         RefreshText(newbind);
         if(newbind.Char != null || newbind.Key != Keys.None)
         {
             game.UpdateKeyBind = false;
-            game.KeyBinds[update.Value] = newbind;
+            game.settings.KeyBinds[update.Value] = newbind;
             // todo: save this value somewhere
             update = null;
         }
@@ -299,11 +312,39 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
     private void FullscreenBtn_Click(object sender, EventArgs e)
     {
         FullscreenBtn.IsFocused = false;
+        StartUpdate(BindKey.Fullscreen);
+    }
+
+    private void ScreenshotBtn_Click(object sender, EventArgs e)
+    {
+        ScreenshotBtn.IsFocused = false;
+        StartUpdate(BindKey.Screenshot);
+    }
+
+    private void StartUpdate(BindKey bindKey)
+    {
         if (game.UpdateKeyBind)
             return;
         game.UpdateKeyBind = true;
-        update = KeyBindKey.Fullscreen;
-        FullscreenBtn.Text = "Press any key...";
+        update = bindKey;
+        RefreshText(new());
+    }
+
+    private void AddSpacing(StackPanel panel, bool doubleSpace = true)
+    {
+        panel.AddChild(new Label
+        {
+            Text = "",
+            Height = 1,
+            HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
+        });
+        if(doubleSpace)
+            panel.AddChild(new Label
+            {
+                Text = "",
+                Height = 1,
+                HeightUnits = Gum.DataTypes.DimensionUnitType.Absolute,
+            });
     }
 
     public override void UnloadContent()
@@ -312,6 +353,8 @@ public class Settings(FMGame game, Menu menu) : GameScreen(game)
         ScrollView.RemoveFromRoot();
         _keyboardListener.KeyPressed -= KeyPressed;
         FullscreenBtn.Click -= FullscreenBtn_Click;
+        ScreenshotBtn.Click -= ScreenshotBtn_Click;
+        CustomServer.TextChanged -= CustomServer_TextChanged;
         ServerSelect.SelectionChanged -= ServerSelect_SelectionChanged;
         base.UnloadContent();
     }

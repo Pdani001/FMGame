@@ -11,12 +11,10 @@ using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
 using MonoGameGum.ExtensionMethods;
-using MonoGameGum.GueDeriving;
 using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
@@ -99,7 +97,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
     {
         _mouseListener.Update(gameTime);
         if(KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
-            ScreenManager.ReplaceScreen(new Menu(game, true));
+            ScreenManager.ReplaceScreen(new MainMenu(game, true));
     }
 
     ScrollViewer ScrollView;
@@ -207,7 +205,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
 
     private void Client_Disconnected(string obj)
     {
-        ScreenManager.ReplaceScreen(new Menu(game, true));
+        ScreenManager.ReplaceScreen(new MainMenu(game, true));
     }
 
     private void Client_ChatMessageReceived(Client user, string text)
@@ -219,8 +217,10 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
     {
         foreach(var line in ui.WrapString(message, ScrollView.ActualWidth))
         {
-            var label = new Label();
-            label.Text = line;
+            var label = new Label
+            {
+                Text = line
+            };
             var visual = (LabelVisual)label.Visual;
             visual.CustomFontFile = "font/ui16.fnt";
             visual.UseCustomFont = true;
@@ -316,7 +316,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         Vector2 position = game.MouseState.Position;
         if (backButton.Contains(position))
         {
-            ScreenManager.ReplaceScreen(new Menu(game, true));
+            ScreenManager.ReplaceScreen(new MainMenu(game, true));
             return;
         }
         if (readyPos.Contains(position) && Character != Character.None)

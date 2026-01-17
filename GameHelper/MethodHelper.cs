@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace ReFMGame.GameHelper
 {
@@ -100,6 +103,34 @@ namespace ReFMGame.GameHelper
                     throw;
                 }
             }
+        }
+
+        public static string GetPath(string name) => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, name);
+        public static void SaveJson<T>(string name, T json, JsonTypeInfo<T> typeInfo)
+        {
+            string jsonPath = GetPath(name);
+            Directory.CreateDirectory(Path.GetDirectoryName(jsonPath)!);
+            string jsonString = JsonSerializer.Serialize(json, typeInfo);
+            File.WriteAllText(jsonPath, jsonString);
+        }
+        public static T EnsureJson<T>(string name, JsonTypeInfo<T> typeInfo) where T : new()
+        {
+            T json;
+            string jsonPath = GetPath(name);
+
+            if (File.Exists(jsonPath))
+            {
+                json = JsonSerializer.Deserialize(File.ReadAllText(jsonPath), typeInfo)!;
+            }
+            else
+            {
+                json = new T();
+                string jsonString = JsonSerializer.Serialize(json, typeInfo);
+                Directory.CreateDirectory(Path.GetDirectoryName(jsonPath)!);
+                File.WriteAllText(jsonPath, jsonString);
+            }
+
+            return json;
         }
     }
 }

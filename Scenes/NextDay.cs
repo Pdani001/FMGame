@@ -54,7 +54,7 @@ public class NextDay(FMGame game, Texture2D screenshot) : GameScreen(game)
             ScreenManager.CloseScreen(fadeTransition);
             fadeTransition.Completed += delegate
             {
-                ScreenManager.ShowScreen(new Menu(game));
+                ScreenManager.ShowScreen(new MainMenu(game));
             };
         }
     }

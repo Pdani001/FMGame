@@ -13,7 +13,7 @@ using System;
 using System.Diagnostics;
 
 namespace ReFMGame.Scenes;
-public class Lobby(FMGame game, Menu menu) : GameScreen(game)
+public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
 {
     readonly Rectangle backButton = new(0, 0, 128, 48);
     Vector2 backPos;
@@ -189,7 +189,7 @@ public class Lobby(FMGame game, Menu menu) : GameScreen(game)
 
     private void Channelname_KeyDown(object sender, KeyEventArgs e)
     {
-        if(e.Key == Microsoft.Xna.Framework.Input.Keys.Enter)
+        if(e.Key == Keys.Enter)
         {
             join.PerformClick();
         }

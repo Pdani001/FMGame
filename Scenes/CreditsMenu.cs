@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 
 namespace ReFMGame.Scenes;
-public class Credits(FMGame game, Menu menu) : GameScreen(game)
+public class CreditsMenu(FMGame game, MainMenu menu) : GameScreen(game)
 {
     readonly Rectangle backButton = new(0, 0, 128, 48);
     Vector2 backPos;
@@ -105,7 +105,7 @@ Huge thanks to:
         Rectangle homepage = new(64, 260 + ((int)lineSize.Height * 3) + ((int)lineSize.Height / 4), 448, (int)lineSize.Height * 2);
         credits.Add((homepage, () =>
         {
-            MethodHelper.OpenUrl("https://github.com/Pdani001/FMGame");
+            MethodHelper.OpenUrl("https://pdani.itch.io/fazbear-multiplayer");
         }
         ));
         base.LoadContent();

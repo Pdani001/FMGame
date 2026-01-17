@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 
 namespace ReFMGame.GameHelper;
-public class KeyBind(bool ctrl = false, bool shift = false, Keys key = Keys.None, char? kchar = null)
+public class KeyBind(bool Ctrl = false, bool Shift = false, Keys Key = Keys.None, char? Char = null)
 {
-    public bool Ctrl { get; set; } = ctrl;
-    public bool Shift { get; set; } = shift;
-    public Keys Key { get; set; } = key;
-    public char? Char { get; set; } = kchar;
+    public bool Ctrl { get; set; } = Ctrl;
+    public bool Shift { get; set; } = Shift;
+    public Keys Key { get; set; } = Key;
+    public char? Char { get; set; } = Char;
 
     public override bool Equals(object obj)
     {
@@ -50,9 +50,10 @@ public class KeyBind(bool ctrl = false, bool shift = false, Keys key = Keys.None
     }
 }
 
-public enum KeyBindKey
+public enum BindKey
 {
     Fullscreen,
     Chat,
+    Screenshot,
     Debug = 99,
 }

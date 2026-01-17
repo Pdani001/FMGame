@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
+using System;
 using System.Collections.Generic;
 
 namespace ReFMGame.Scenes;
@@ -44,33 +45,45 @@ public class Splash(FMGame game) : GameScreen(game)
     public override void Update(GameTime gameTime)
     {
         if (textures.Count <= Index || (Mouse.GetState().LeftButton == ButtonState.Pressed && game.IsActive && GameView.Contains(game.MouseState.Position)) || (Mouse.GetState().RightButton == ButtonState.Pressed && game.IsActive && GameView.Contains(game.MouseState.Position))) {
-            ScreenManager.ReplaceScreen(new Menu(game));
+            ScreenManager.ReplaceScreen(new MainMenu(game, rare: rare));
             return;
         }
+#if DEBUG
+        if (KeyboardExtended.GetState().WasKeyPressed(Keys.R))
+        {
+            rare = true;
+        }
+#endif
         double time = gameTime.TotalGameTime.TotalMilliseconds;
         if (update == 0)
-            update = time + 2000;
+            update = time + 2500;
         if (time >= update)
         {
-            if (!Forward && Alpha > 0)
+            if (!Forward)
             {
-                Alpha -= 3;
-                update = time + 5;
+                if (Alpha > 0)
+                {
+                    Alpha -= 3;
+                    update = time + 5;
+                }
+                else
+                {
+                    Index++;
+                    Forward = true;
+                }
             }
-            if (!Forward && Alpha == 0)
+            if (Forward)
             {
-                Index++;
-                Forward = true;
-            }
-            if (Forward && Alpha < 255)
-            {
-                Alpha += 3;
-                update = time + 5;
-            }
-            if (Forward && Alpha == 255)
-            {
-                Forward = false;
-                update = time + 2000;
+                if (Alpha < 255)
+                {
+                    Alpha += 3;
+                    update = time + 5;
+                }
+                else
+                {
+                    Forward = false;
+                    update = time + 2500;
+                }
             }
             if (Alpha < 0)
                 Alpha = 0;
@@ -78,9 +91,11 @@ public class Splash(FMGame game) : GameScreen(game)
                 Alpha = 255;
         }
     }
-
+    private readonly Random rng = new(Guid.NewGuid().GetHashCode());
+    private bool rare = false;
     public override void LoadContent()
     {
+        rare = rng.Next(6) == 1;
         base.LoadContent();
         Alpha = 255;
         update = 0;
