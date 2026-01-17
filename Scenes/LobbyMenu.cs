@@ -11,6 +11,7 @@ using MonoGameGum;
 using ReFMGame.Network;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace ReFMGame.Scenes;
 public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
@@ -64,6 +65,9 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
 
     TextBox nickname;
     TextBox channelname;
+    PasswordBox password;
+    ListBox lobbylist;
+    Channel[] channels = [];
     Button refresh;
     Button create;
     Button join;
@@ -75,16 +79,17 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         game.Client.LeftChannel += Client_LeftChannel;
         game.Client.ChannelListReceived += Client_ChannelListReceived;
         game.Client.Error += Client_Error;
-#if DEBUG
         game.Client.ServerSecretAccepted += Client_ServerSecretAccepted;
-#endif
 
         if (!game.Client.IsConnected)
             game.Client.Connect();
         else
         {
             InfoText = "";
-            game.Client.LeaveChannel();
+            if (game.Client.Channel != null)
+                game.Client.LeaveChannel();
+            else
+                game.Client.RequestChannelList();
         }
 
         small = Content.Load<BitmapFont>("font/nunito20");
@@ -92,6 +97,38 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         smallB = Content.Load<BitmapFont>("font/nunito20b");
         SizeF backSize = smallB.MeasureString("Back");
         backPos = new(64 - backSize.Width / 2, 24 - backSize.Height / 2);
+
+        lobbylist = new ListBox
+        {
+            X = 546,
+            Y = 249,
+            Width = 448,
+            Height = 344,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            IsEnabled = false,
+        };
+        var listVisual = (ListBoxVisual)lobbylist.Visual;
+        listVisual.Background.ApplyState(Styling.ActiveStyle.NineSlice.OutlinedHeavy);
+
+        lobbylist.SelectionChanged += Lobbylist_SelectionChanged;
+
+        password = new PasswordBox
+        {
+            X = 546,
+            Y = 593,
+            Width = 319,
+            Height = 32,
+            Placeholder = "Password",
+            IsEnabled = false,
+        };
+        var passwordVisual = (PasswordBoxVisual)password.Visual;
+        passwordVisual.TextInstance.CustomFontFile = "font/ui20.fnt";
+        passwordVisual.TextInstance.UseCustomFont = true;
+        passwordVisual.PlaceholderTextInstance.CustomFontFile = "font/ui20.fnt";
+        passwordVisual.PlaceholderTextInstance.UseCustomFont = true;
+        passwordVisual.BackgroundColor = Color.Azure;
+        passwordVisual.ForegroundColor = Color.Black;
+
         nickname = new TextBox
         {
             X = 64,
@@ -162,8 +199,8 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
 
         join = new Button
         {
-            X = 319,
-            Y = 326 + create.ActualHeight,
+            X = lobbylist.X + lobbylist.ActualWidth - 64,
+            Y = lobbylist.Y + lobbylist.ActualHeight,
             Width = 64,
             Height = 10,
             Text = "Join",
@@ -179,6 +216,8 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         create.Click += Create_Click;
         join.Click += Join_Click;
 
+        password.AddToRoot();
+        lobbylist.AddToRoot();
         join.AddToRoot();
         create.AddToRoot();
         refresh.AddToRoot();
@@ -187,11 +226,23 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         base.LoadContent();
     }
 
+    private void Lobbylist_SelectionChanged(object arg1, Gum.Wireframe.SelectionChangedEventArgs arg2)
+    {
+        if(lobbylist.SelectedIndex < 0) return;
+        join.IsEnabled = true;
+        Debug.WriteLine(lobbylist.SelectedIndex);
+        Debug.WriteLine($"[{string.Join(", ",channels.Select(e=>$"'{e.ToString().Replace("\n","\\n")}' => {e.Password}"))}]");
+        if (lobbylist.SelectedIndex >= channels.Length)
+            return;
+        password.Password = "";
+        password.IsEnabled = channels[lobbylist.SelectedIndex].Password;
+    }
+
     private void Channelname_KeyDown(object sender, KeyEventArgs e)
     {
         if(e.Key == Keys.Enter)
         {
-            join.PerformClick();
+            create.PerformClick();
         }
     }
 
@@ -201,12 +252,15 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
     {
         InfoText = "Joining lobby...";
         joining = true;
-        game.Client.JoinChannel(channelname.Text, nickname.Text);
+        Channel channel = channels[lobbylist.SelectedIndex];
+        game.Client.JoinChannel(channel.Name, nickname.Text, password: password.Password);
+        lobbylist.IsEnabled = false;
         join.IsEnabled = false;
         create.IsEnabled = false;
         refresh.IsEnabled = false;
         nickname.IsEnabled = false;
         channelname.IsEnabled = false;
+        password.IsEnabled = false;
     }
 
     private void Create_Click(object sender, EventArgs e)
@@ -214,17 +268,22 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         InfoText = "Creating lobby...";
         joining = true;
         game.Client.CreateChannel(channelname.Text, nickname.Text);
+        lobbylist.IsEnabled = false;
         join.IsEnabled = false;
         create.IsEnabled = false;
         refresh.IsEnabled = false;
         nickname.IsEnabled = false;
         channelname.IsEnabled = false;
+        password.IsEnabled = false;
     }
 
     private void Refresh_Click(object sender, EventArgs e)
     {
         InfoText = "";
+        join.IsEnabled = false;
         refresh.IsEnabled = false;
+        lobbylist.Items.Clear();
+        channels = [];
         game.Client.RequestChannelList();
     }
 
@@ -236,15 +295,16 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         game.Client.LeftChannel -= Client_LeftChannel;
         game.Client.ChannelListReceived -= Client_ChannelListReceived;
         game.Client.Error -= Client_Error;
-#if DEBUG
         game.Client.ServerSecretAccepted -= Client_ServerSecretAccepted;
-#endif
 
+        lobbylist.SelectionChanged -= Lobbylist_SelectionChanged;
         channelname.KeyDown -= Channelname_KeyDown;
         refresh.Click -= Refresh_Click;
         create.Click -= Create_Click;
         join.Click -= Join_Click;
 
+        password.RemoveFromRoot();
+        lobbylist.RemoveFromRoot();
         join.RemoveFromRoot();
         create.RemoveFromRoot();
         refresh.RemoveFromRoot();
@@ -259,7 +319,8 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         if (joining)
         {
             joining = false;
-            join.IsEnabled = true;
+            join.IsEnabled = lobbylist.SelectedObject != null;
+            lobbylist.IsEnabled = true;
             create.IsEnabled = true;
             refresh.IsEnabled = true;
             nickname.IsEnabled = true;
@@ -293,10 +354,12 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
     {
         InfoText = "";
 #if DEBUG
-        Debug.WriteLine("Connected to server in DEBUG mode.");
         game.Client.SendServerSecret(Environment.GetEnvironmentVariable("SERVER_SECRET") ?? "");
 #else
-        game.Client.RequestChannelList();
+        if(game.ServerSecret == "")
+            game.Client.RequestChannelList();
+        else
+            game.Client.SendServerSecret(game.ServerSecret);
 #endif
     }
 
@@ -304,7 +367,21 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
     {
         if (joining)
             return;
-        join.IsEnabled = true;
+        channels = list;
+        lobbylist.Items.Clear();
+        for (int i = 0; i < list.Length; i++)
+        {
+            ListBoxItem item = new();
+            item.UpdateToObject(list[i]);
+            var visual = (ListBoxItemVisual)item.Visual;
+            visual.TextInstance.CustomFontFile = "font/vui20.fnt";
+            visual.TextInstance.UseCustomFont = true;
+            lobbylist.Items.Add(item);
+        }
+        password.Password = "";
+        password.IsEnabled = false;
+        join.IsEnabled = false;
+        lobbylist.IsEnabled = true;
         create.IsEnabled = true;
         refresh.IsEnabled = true;
         nickname.IsEnabled = true;
@@ -317,10 +394,8 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         game.Client.RequestChannelList();
     }
 
-#if DEBUG
     private void Client_ServerSecretAccepted()
     {
         game.Client.RequestChannelList();
     }
-#endif
 }

@@ -22,7 +22,7 @@ namespace ReFMGame.Network
         public Client Self { get; private set; } = null;
         private string Session => Self?.Id.ToString() ?? "";
 
-        public const int PROTOCOL_VERSION = 3;
+        public const int PROTOCOL_VERSION = 4;
 
         public bool IsConnected => _client?.IsConnected ?? false;
 

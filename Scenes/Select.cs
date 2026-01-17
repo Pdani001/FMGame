@@ -15,6 +15,7 @@ using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
@@ -100,6 +101,8 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
             ScreenManager.ReplaceScreen(new MainMenu(game, true));
     }
 
+    List<string> ChatHistory = [];
+    int HistoryIndex = -1;
     ScrollViewer ScrollView;
     TextBox MessageBox;
     BitmapFont ui;
@@ -129,6 +132,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
 
         game.Client.ChannelUserJoined += Client_ChannelUserJoined;
         game.Client.ChannelUserLeft += Client_ChannelUserLeft;
+        game.Client.LeftChannel += Client_Disconnected;
         game.Client.UserReady += Client_UserReady;
         game.Client.CharacterSelected += Client_CharacterSelected;
         game.Client.GameCountdown += Client_GameCountdown;
@@ -168,8 +172,35 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
 
         MessageBox.KeyDown += (_, args) =>
         {
-            if(MessageBox.Text?.Length > 0 && args.Key == Microsoft.Xna.Framework.Input.Keys.Enter)
+            if(args.Key == Keys.Up)
             {
+                HistoryIndex = HistoryIndex == -1 ? ChatHistory.Count - 1 : HistoryIndex > 0 ? HistoryIndex - 1 : 0;
+                if(HistoryIndex > -1)
+                {
+                    MessageBox.Text = ChatHistory[HistoryIndex];
+                    MessageBox.CaretIndex = MessageBox.Text.Length;
+                }
+                return;
+            }
+            if (args.Key == Keys.Down)
+            {
+                if (HistoryIndex > -1 && HistoryIndex < ChatHistory.Count-1)
+                {
+                    HistoryIndex++;
+                    MessageBox.Text = ChatHistory[HistoryIndex];
+                    MessageBox.CaretIndex = MessageBox.Text.Length;
+                }
+                else
+                {
+                    HistoryIndex = -1;
+                    MessageBox.Text = "";
+                }
+                return;
+            }
+            HistoryIndex = -1;
+            if(MessageBox.Text?.Length > 0 && args.Key == Keys.Enter)
+            {
+                ChatHistory.Add(MessageBox.Text);
                 game.Client.SendMessage(MessageBox.Text);
                 MessageBox.Text = "";
             }
@@ -210,7 +241,10 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
 
     private void Client_ChatMessageReceived(Client user, string text)
     {
-        ChatMessage($"{user.Nick}: {text}");
+        if(user != null && user.Id != Guid.Empty)
+            ChatMessage($"{user.Nick}: {text}");
+        else
+            ChatMessage($"> {text}");
     }
 
     private void ChatMessage(string message)
@@ -357,6 +391,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         _mouseListener.MouseClicked -= MouseClicked;
         game.Client.ChannelUserJoined -= Client_ChannelUserJoined;
         game.Client.ChannelUserLeft -= Client_ChannelUserLeft;
+        game.Client.LeftChannel -= Client_Disconnected;
         game.Client.UserReady -= Client_UserReady;
         game.Client.CharacterSelected -= Client_CharacterSelected;
         game.Client.GameCountdown -= Client_GameCountdown;

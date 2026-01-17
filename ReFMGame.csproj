@@ -12,7 +12,7 @@
   <PropertyGroup>
 	<MonoGameExtendedPipelineReferencePath>$(MSBuildThisFileDirectory)Content</MonoGameExtendedPipelineReferencePath>
 	<Authors>Pdani</Authors>
-	<Version>0.2.2</Version>
+	<Version>0.2.3</Version>
 	<PackageId>FMGame</PackageId>
 	<Title>FMGame</Title>
 	<Product>$(Title)</Product>

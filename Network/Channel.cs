@@ -9,6 +9,10 @@ namespace ReFMGame.Network
         public Guid Owner { get; set; }
         public List<Client> Clients { get; set; }
         public bool Password { get; set; } = false;
+        public override string ToString()
+        {
+            return Name + '\n' + (Password ? "\u00CC " : "  ") + Clients.Count + "/5";
+        }
     }
     public class Selected
     {

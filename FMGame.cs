@@ -74,9 +74,28 @@ public class FMGame : Game
                 UpdateClient();
         }
     }
+    public string ServerSecret { get; private set; }
 
     public FMGame()
     {
+        string key = "";
+        foreach (string value in Environment.GetCommandLineArgs()[1..])
+        {
+            if(value.StartsWith('-'))
+            {
+                if(key != "")
+                {
+                    LaunchParameters.Add(key, "");
+                }
+                key = value[1..];
+                continue;
+            }
+            if(key != "")
+            {
+                LaunchParameters.Add(key, value);
+                key = "";
+            }
+        }
         _keyboardListener = new KeyboardListener();
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
@@ -184,6 +203,7 @@ public class FMGame : Game
         {
             return;
         }
+        ServerSecret = "";
         switch (ServerIndex)
         {
             case 0:
@@ -195,7 +215,7 @@ public class FMGame : Game
                 CustomAddress = "";
                 break;
             default:
-                Debug.WriteLine(CustomAddress);
+                ServerSecret = LaunchParameters.TryGetValue("-secret", out string value) ? value : "";
                 var host = "";
                 var port = 7121;
                 if(IPEndPoint.TryParse(CustomAddress, out IPEndPoint ip))
