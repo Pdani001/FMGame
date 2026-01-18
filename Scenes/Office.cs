@@ -191,7 +191,11 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             else
             {
                 game.SpriteBatch.DrawString(smallFont, $"You are {Character}", new(33, 602), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
-                if (ActiveView <= 10)
+                if (ActiveView > 10 || (Character == Character.Foxy && ActiveView != 2))
+                {
+                    game.SpriteBatch.DrawString(smallFont, $"Attack in progress, stand by!", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
+                }
+                else
                 {
                     if (MoveTime > 0)
                     {
@@ -203,10 +207,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                     {
                         game.SpriteBatch.DrawString(smallFont, $"You can move now!", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
                     }
-                }
-                else
-                {
-                    game.SpriteBatch.DrawString(smallFont, $"Attack in progress, stand by!", new(33, 670), Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.8f);
                 }
             }
             string power = $"{Power / 10}".PadLeft(3);

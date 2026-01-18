@@ -8,10 +8,11 @@ namespace ReFMGame.Network
         public string Name { get; set; }
         public Guid Owner { get; set; }
         public List<Client> Clients { get; set; }
+        public int MaxPlayers { get; set; } = 5;
         public bool Password { get; set; } = false;
         public override string ToString()
         {
-            return Name + '\n' + (Password ? "\u00CC " : "  ") + Clients.Count + "/5";
+            return Name + '\n' + (Password ? "\u00CC " : "  ") + Clients.Count + "/" + MaxPlayers;
         }
     }
     public class Selected

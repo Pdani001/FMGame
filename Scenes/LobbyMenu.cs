@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
+using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
 using ReFMGame.Network;
@@ -55,6 +56,8 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
 
     public override void Update(GameTime gameTime)
     {
+        listClick -= (float)(listClick > 0 ? Math.Min(listClick, gameTime.ElapsedGameTime.TotalSeconds) : 0);
+        _mouseListener.Update(gameTime);
         menu.static_animation.Animate(gameTime);
         if ((backButton.Contains(game.MouseState.Position) && MouseExtended.GetState().WasButtonPressed(MouseButton.Left)) || KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
         {
@@ -63,14 +66,16 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         }
     }
 
-    TextBox nickname;
-    TextBox channelname;
-    PasswordBox password;
-    ListBox lobbylist;
-    Channel[] channels = [];
-    Button refresh;
-    Button create;
-    Button join;
+    private float listClick = 0;
+    private MouseListener _mouseListener;
+    private TextBox nickname;
+    private TextBox channelname;
+    private PasswordBox password;
+    private ListBox lobbylist;
+    private Channel[] channels = [];
+    private Button refresh;
+    private Button create;
+    private Button join;
     public override void LoadContent()
     {
         game.Client.Connected += Client_Connected;
@@ -92,6 +97,13 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
                 game.Client.RequestChannelList();
         }
 
+        var settings = new MouseListenerSettings
+        {
+            DragThreshold = int.MaxValue
+        };
+        _mouseListener = new MouseListener(settings);
+        _mouseListener.MouseDoubleClicked += MouseDoubleClicked;
+
         small = Content.Load<BitmapFont>("font/nunito20");
         //var test = new RenderingLibrary.Graphics.BitmapFont("font/vui20.fnt");
         smallB = Content.Load<BitmapFont>("font/nunito20b");
@@ -106,17 +118,19 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
             Height = 344,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             IsEnabled = false,
+            GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
         };
         var listVisual = (ListBoxVisual)lobbylist.Visual;
         listVisual.Background.ApplyState(Styling.ActiveStyle.NineSlice.OutlinedHeavy);
 
         lobbylist.SelectionChanged += Lobbylist_SelectionChanged;
+        lobbylist.ItemClicked += Lobbylist_ItemClicked;
 
         password = new PasswordBox
         {
-            X = 546,
+            X = 611,
             Y = 593,
-            Width = 319,
+            Width = 318,
             Height = 32,
             Placeholder = "Password",
             IsEnabled = false,
@@ -129,6 +143,8 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         passwordVisual.BackgroundColor = Color.Azure;
         passwordVisual.ForegroundColor = Color.Black;
 
+        password.KeyDown += Password_KeyDown;
+
         nickname = new TextBox
         {
             X = 64,
@@ -138,6 +154,7 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
             Placeholder = "Nickname",
             MaxLength = 24,
             IsEnabled = false,
+            Text = game.Client.Self?.Nick ?? "",
         };
         var nicknameVisual = (TextBoxVisual)nickname.Visual;
         nicknameVisual.TextInstance.CustomFontFile = "font/ui20.fnt";
@@ -169,10 +186,10 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
 
         refresh = new Button
         {
-            X = 64,
-            Y = 324,
+            X = lobbylist.X,
+            Y = lobbylist.Y + lobbylist.ActualHeight,
             Width = 64,
-            Height = 10,
+            Height = 6,
             Text = "Refresh",
             IsEnabled = false,
             GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
@@ -185,9 +202,9 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         create = new Button
         {
             X = 319,
-            Y = 324,
+            Y = 325,
             Width = 64,
-            Height = 10,
+            Height = 6,
             Text = "Create",
             IsEnabled = false,
             GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
@@ -202,7 +219,7 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
             X = lobbylist.X + lobbylist.ActualWidth - 64,
             Y = lobbylist.Y + lobbylist.ActualHeight,
             Width = 64,
-            Height = 10,
+            Height = 6,
             Text = "Join",
             IsEnabled = false,
             GamepadTabbingFocusBehavior = TabbingFocusBehavior.SkipOnTab,
@@ -226,7 +243,28 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         base.LoadContent();
     }
 
-    private void Lobbylist_SelectionChanged(object arg1, Gum.Wireframe.SelectionChangedEventArgs arg2)
+    private void Password_KeyDown(object _, KeyEventArgs e)
+    {
+        if (e.Key == Keys.Enter)
+        {
+            join.PerformClick();
+        }
+    }
+
+    private void MouseDoubleClicked(object _, MouseEventArgs e)
+    {
+        if (listClick > 0)
+        {
+            join.PerformClick();
+        }
+    }
+
+    private void Lobbylist_ItemClicked(object _, EventArgs e)
+    {
+        listClick = _mouseListener.DoubleClickMilliseconds / 1000f;
+    }
+
+    private void Lobbylist_SelectionChanged(object _, Gum.Wireframe.SelectionChangedEventArgs e)
     {
         if(lobbylist.SelectedIndex < 0) return;
         join.IsEnabled = true;
@@ -297,8 +335,12 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         game.Client.Error -= Client_Error;
         game.Client.ServerSecretAccepted -= Client_ServerSecretAccepted;
 
+        _mouseListener.MouseDoubleClicked -= MouseDoubleClicked;
+
         lobbylist.SelectionChanged -= Lobbylist_SelectionChanged;
+        lobbylist.ItemClicked -= Lobbylist_ItemClicked;
         channelname.KeyDown -= Channelname_KeyDown;
+        password.KeyDown -= Password_KeyDown;
         refresh.Click -= Refresh_Click;
         create.Click -= Create_Click;
         join.Click -= Join_Click;
@@ -320,11 +362,15 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         {
             joining = false;
             join.IsEnabled = lobbylist.SelectedObject != null;
+            if(lobbylist.SelectedObject != null)
+                password.IsEnabled = channels[lobbylist.SelectedIndex].Password;
             lobbylist.IsEnabled = true;
             create.IsEnabled = true;
             refresh.IsEnabled = true;
             nickname.IsEnabled = true;
+            nickname.IsFocused = nickname.Text.Length == 0;
             channelname.IsEnabled = true;
+            channelname.IsFocused = nickname.Text.Length != 0;
         }
     }
 
@@ -385,8 +431,9 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         create.IsEnabled = true;
         refresh.IsEnabled = true;
         nickname.IsEnabled = true;
-        nickname.IsFocused = true;
+        nickname.IsFocused = nickname.Text.Length == 0;
         channelname.IsEnabled = true;
+        channelname.IsFocused = nickname.Text.Length != 0;
     }
 
     private void Client_LeftChannel(string name)

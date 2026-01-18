@@ -150,7 +150,8 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
             IsEnabled = false,
         };
         var scrollviewvisual = (ScrollViewerVisual)ScrollView.Visual;
-        scrollviewvisual.BackgroundColor = Color.Transparent;
+        //scrollviewvisual.BackgroundColor = Color.Transparent;
+        scrollviewvisual.Background.ApplyState(Styling.ActiveStyle.NineSlice.OutlinedHeavy);
 
         MessageBox = new TextBox
         {
@@ -221,7 +222,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         };
 
         if (lobby)
-            ChatMessage("Welcome to Fazbear Multiplayer!");
+            ChatMessage("Welcome to Fazbear Multiplayer!\nFor a list of commands type in /help");
         else
         {
             game.Audio.StopAll();
@@ -266,9 +267,9 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         }
     }
 
-    private void Client_ChannelUserLeft(Client user)
+    private void Client_ChannelUserLeft(Client user, string reason = "")
     {
-        ChatMessage($"> {user.Nick} left.");
+        ChatMessage($"> {user.Nick} left." + (reason != "" ? " (" : "") + reason + (reason != "" ? ")" : ""));
         if (selected.Contains(user.Id))
         {
             var index = selected.IndexOf(user.Id);

@@ -40,7 +40,7 @@ namespace ReFMGame.Network
         public event Action<Channel, string> JoinedChannel;
         public event Action<string> LeftChannel;
         public event Action<Client, List<Selected>> ChannelUserJoined;
-        public event Action<Client> ChannelUserLeft;
+        public event Action<Client, string> ChannelUserLeft;
         public event Action<Client, string> ChatMessageReceived;
 
         public event Action<Client, Character> CharacterSelected;
@@ -109,6 +109,7 @@ namespace ReFMGame.Network
 
         public void CreateChannel(string name, string nick, bool hidden = false)
         {
+            Self.Nick = nick;
             Send(new
             {
                 Session,
@@ -121,6 +122,7 @@ namespace ReFMGame.Network
 
         public void JoinChannel(string name, string nick, bool hidden = false, string password = "")
         {
+            Self.Nick = nick;
             Send(new { Session, type = "join_channel", channel = name, nick, hidden, text = password });
         }
 
@@ -214,6 +216,13 @@ namespace ReFMGame.Network
             {
                 switch (msg.Type)
                 {
+                    case "ping":
+                        Send(new
+                        {
+                            type = "ping"
+                        });
+                        break;
+
                     case "hello":
                         Send(new
                         {
@@ -223,16 +232,16 @@ namespace ReFMGame.Network
                         break;
 
                     case "auth":
+                        Debug.WriteLine("NetworkClient: Authentication successful");
                         Self = msg.Client;
                         break;
 
                     case "challenge":
-                        Debug.WriteLine("NetworkClient: Received challenge, sending auth...");
+                        Debug.WriteLine($"NetworkClient: Received challenge `{msg.Text}`, sending response hash...");
                         using (SHA256 sha256Hash = SHA256.Create())
                         {
                             string hash = GetHash(sha256Hash, msg.Text+HashSalt);
                             Send(new { type = "auth", text = hash });
-                            Debug.WriteLine("NetworkClient: Sent auth.");
                         }
                         break;
 
@@ -241,6 +250,7 @@ namespace ReFMGame.Network
                         break;
 
                     case "connected":
+                        Debug.WriteLine("NetworkClient: Connection finished");
                         Connected?.Invoke();
                         break;
 
@@ -273,7 +283,7 @@ namespace ReFMGame.Network
 
                     case "channel_user_left":
                         Channel.Clients.RemoveAll(c => c.Id == msg.Client.Id);
-                        ChannelUserLeft?.Invoke(msg.Client);
+                        ChannelUserLeft?.Invoke(msg.Client, msg.Text ?? "");
                         break;
 
                     case "chat":

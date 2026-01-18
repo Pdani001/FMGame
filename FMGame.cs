@@ -253,7 +253,7 @@ public class FMGame : Game
                         var path = MethodHelper.GetPath($"screenshots{Path.DirectorySeparatorChar}{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss_ffff")}.png");
                         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                         var stream = new StreamWriter(path).BaseStream;
-                        GetScreenshot().SaveAsPng(stream, WindowSize.X, WindowSize.Y);
+                        GetScreenshot(true).SaveAsPng(stream, CurrentWindowSize.X, CurrentWindowSize.Y);
                         stream.Close();
                         stream.Dispose();
                         break;
@@ -366,11 +366,22 @@ public class FMGame : Game
         return scale;
     }
 
-    public Texture2D GetScreenshot()
+    public Texture2D GetScreenshot(bool screen = false)
     {
-        Texture2D screenshot = new Texture2D(GraphicsDevice, WindowSize.X, WindowSize.Y);
-        Color[] colors = new Color[WindowSize.X * WindowSize.Y];
-        RenderTarget.GetData(colors);
+        Texture2D screenshot;
+        Color[] colors;
+        if (screen)
+        {
+            screenshot = new Texture2D(GraphicsDevice, CurrentWindowSize.X, CurrentWindowSize.Y);
+            colors = new Color[CurrentWindowSize.X * CurrentWindowSize.Y];
+            GraphicsDevice.GetBackBufferData(colors);
+        }
+        else
+        {
+            screenshot = new Texture2D(GraphicsDevice, WindowSize.X, WindowSize.Y);
+            colors = new Color[WindowSize.X * WindowSize.Y];
+            RenderTarget.GetData(colors);
+        }
         screenshot.SetData(colors);
         return screenshot;
     }
