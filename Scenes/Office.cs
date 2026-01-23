@@ -141,13 +141,6 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     public override void Draw(GameTime gameTime)
 	{
-#if DEBUG
-        if(bg_texture == null)
-        {
-            Debug.WriteLine("!!! bg_texture is NULL !!!");
-            return;
-        }
-#endif
         GraphicsDevice.SetRenderTarget(officeTarget);
         game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);
 		// Draw targets behind the perspective effect here!
@@ -1093,6 +1086,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void Client_GameState(GameState state)
     {
+        if(GameState != null && Character != Character.Guard && !GameState.Camera.Active && state.Camera.Active)
+            cam_rec.Reset(0);
         GameState = state;
         Time = GameState.Time;
         if (Time == 6)
@@ -1103,7 +1098,9 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         Power = GameState.Power;
         CheckPower();
         BlockLeft = GameState.Left.Blocked;
+        GameState.Left.Light = (!BlockLeft || !GameState.Left.Light) && GameState.Left.Light;
         BlockRight = GameState.Right.Blocked;
+        GameState.Left.Light = (!BlockRight || !GameState.Right.Light) && GameState.Right.Light;
         if(GameState.Left.Light != LeftLight)
         {
             ToggleLight(true);

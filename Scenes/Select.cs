@@ -33,14 +33,6 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
     };
     readonly Rectangle readyPos = new(1020, 600, 186, 56);
     readonly Rectangle backButton = new(0, 0, 128, 48);
-    readonly bool[] isCrossed =
-    {
-        false,
-        false,
-        true,
-        true,
-        false
-    };
     readonly bool[] isReady =
     {
         false,
@@ -61,7 +53,6 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
     Texture2D check;
     Texture2D cross;
     Texture2D ready;
-    SoundEffect error;
     readonly Color selectColor = new(255, 255, 255, 127);
 
     Character Character = Character.None;
@@ -77,9 +68,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         for(int i = 0; i < charIcons.Length; i++)
         {
             game.SpriteBatch.Draw(charIcons[i], charPos[i].Location.ToVector2(), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0f);
-            if(isCrossed[i])
-                game.SpriteBatch.Draw(cross, charPos[i].Location.ToVector2(), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, .5f);
-            else if (selected[i] != Guid.Empty)
+            if (selected[i] != Guid.Empty)
                 game.SpriteBatch.Draw(check, charPos[i].Location.ToVector2(), null, !isReady[i] ? selectColor : Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, .5f);
         }
 
@@ -121,8 +110,6 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         check = Content.Load<Texture2D>("select/checkmark");
         cross = Content.Load<Texture2D>("select/crossmark");
         ready = Content.Load<Texture2D>("select/ready");
-        if(!game.Audio.NoAudio)
-            error = Content.Load<SoundEffect>("error");
 
         var settings = new MouseListenerSettings();
         settings.DoubleClickMilliseconds = int.MinValue;
@@ -364,23 +351,15 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         {
             if (charPos[i].Contains(position))
             {
-                if (isCrossed[i])
+                if (Character != Character.None && i != (int)Character)
+                    break;
+                if (selected[i] == Guid.Empty)
                 {
-                    game.Audio.Play(error);
-                    ChatMessage($"> {(Character)i} not yet playable.");
+                    game.Client.SelectCharacter(i);
                 }
-                else
+                else if (selected[i] == game.Client.Self.Id && !isReady[i])
                 {
-                    if (Character != Character.None && i != (int)Character)
-                        break;
-                    if (selected[i] == Guid.Empty)
-                    {
-                        game.Client.SelectCharacter(i);
-                    }
-                    else if (selected[i] == game.Client.Self.Id && !isReady[i])
-                    {
-                        game.Client.SelectCharacter((int)Character.None);
-                    }
+                    game.Client.SelectCharacter((int)Character.None);
                 }
                 break;
             }
