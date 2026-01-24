@@ -31,6 +31,14 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         new(540, 64, 200, 200),
         new(789, 64, 200, 200),
     };
+    readonly Vector2[] textPos =
+    {
+        new(1070, 256),
+        new(74, 256),
+        new(323, 256),
+        new(572, 256),
+        new(821, 256),
+    };
     readonly Rectangle readyPos = new(1020, 600, 186, 56);
     readonly Rectangle backButton = new(0, 0, 128, 48);
     readonly bool[] isReady =
@@ -50,6 +58,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         Guid.Empty,
     ];
     Texture2D[] charIcons;
+    Texture2D[] charTexts;
     Texture2D check;
     Texture2D cross;
     Texture2D ready;
@@ -68,6 +77,7 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
         for(int i = 0; i < charIcons.Length; i++)
         {
             game.SpriteBatch.Draw(charIcons[i], charPos[i].Location.ToVector2(), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0f);
+            game.SpriteBatch.Draw(charTexts[i], textPos[i], null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0f);
             if (selected[i] != Guid.Empty)
                 game.SpriteBatch.Draw(check, charPos[i].Location.ToVector2(), null, !isReady[i] ? selectColor : Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, .5f);
         }
@@ -106,6 +116,13 @@ public class Select(FMGame game, bool lobby = true) : GameScreen(game)
             Content.Load<Texture2D>("select/bonnie"),
             Content.Load<Texture2D>("select/chica"),
             Content.Load<Texture2D>("select/foxy"),
+        ];
+        charTexts = [
+            Content.Load<Texture2D>("select/guard_text"),
+            Content.Load<Texture2D>("select/freddy_text"),
+            Content.Load<Texture2D>("select/bonnie_text"),
+            Content.Load<Texture2D>("select/chica_text"),
+            Content.Load<Texture2D>("select/foxy_text"),
         ];
         check = Content.Load<Texture2D>("select/checkmark");
         cross = Content.Load<Texture2D>("select/crossmark");

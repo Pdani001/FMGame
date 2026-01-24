@@ -13,6 +13,7 @@ using ReFMGame.Animations.Jumpscare;
 using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -56,6 +57,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     private SoundEffect door;
     private SoundEffect powerdown_sound;
     private SoundEffect powerdown_ambience;
+    private SoundEffect game_ambience;
     private SoundEffect musicbox;
     private SoundEffect deepsteps;
     private SoundEffect windowscare;
@@ -113,6 +115,10 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private readonly SoundEffect[] garbleSounds = new SoundEffect[4];
     private readonly SoundEffect[] robotVocals = new SoundEffect[4];
+    private readonly SoundEffect[] kitchenOven = new SoundEffect[4];
+    private SoundEffectInstance ovenSound;
+    private readonly SoundEffect[] freddyLaugh = new SoundEffect[3];
+    private SoundEffectInstance freddyMusic;
 
     private readonly FrameAnimation button_animation = new CamButton();
     // -29;-19
@@ -129,6 +135,82 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         new(1159,537, 60,40),   //6
         new(1167,407, 60,40)    //7
     ];
+
+    private readonly Dictionary<Character, Vector2[]> RobotCheatPosition = new()
+    {
+        {
+            Character.Freddy,
+            [
+                new(-5,-10),
+                new(-15,-10),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,-20),
+                new(15,15),
+                new(0,0),
+                new(0,-10),
+                new(0,-10),
+            ]
+        },
+        {
+            Character.Bonnie,
+            [
+                new(-15,10),
+                new(-10,10),
+                new(0,0),
+                new(0,-10),
+                new(-15,10),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+            ]
+        },
+        {
+            Character.Chica,
+            [
+                new(10,10),
+                new(15,10),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(20,-10),
+                new(20,10),
+                new(0,0),
+                new(0,10),
+                new(0,10),
+            ]
+        },
+        {
+            Character.Foxy,
+            [
+                new(0,0),
+                new(0,0),
+                new(-20,-10),
+                new(0,-10),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+                new(0,0),
+            ]
+        },
+    };
+
+    private readonly Dictionary<Character, Color> RobotColor = new()
+    {
+        { Character.Freddy, new(183, 103, 67) },
+        { Character.Bonnie, new(59, 123, 163) },
+        { Character.Chica, new(223, 203, 0) },
+        { Character.Foxy, new(231, 0, 0) },
+    };
 
     // +7;+7
     private TextureAnimation button_text;
@@ -278,9 +360,32 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 game.SpriteBatch.DrawLine(new(996, 0), new(996, 720), new(99, 23, 99), layerDepth: 1);
                 game.SpriteBatch.DrawLine(new(1197, 0), new(1197, 720), new(71, 7, 75), layerDepth: 1);
             }
-            else if(Character != Character.Guard && !IsJumpscared)
+            else if (Character != Character.Guard && !IsJumpscared)
             {
                 game.SpriteBatch.DrawRectangle(AttackPos, new(95, 155, 0), layerDepth: 1);
+            }
+        }
+        if(Character != Character.Guard || game.DebugMode)
+        {
+            for (int i = 1; i < 5; i++)
+            {
+                Character robot = (Character)i;
+                if (RobotCheatPosition.TryGetValue(robot, out var relative))
+                {
+                    short robotPos = robot switch
+                    {
+                        Character.Freddy => Freddy,
+                        Character.Bonnie => Bonnie,
+                        Character.Chica => Chica,
+                        Character.Foxy => Foxy < 3 ? (short)2 : Foxy < 5 ? (short)3 : (short)21,
+                        _ => -1
+                    };
+                    if (robotPos > -1)
+                    {
+                        Vector2 iconPos = robotPos >= 21 ? AttackPos.Center.ToVector2() - new Vector2(17) : CameraButtons[robotPos].Center.ToVector2() - new Vector2(17) + relative[robotPos];
+                        game.SpriteBatch.FillRectangle(new(iconPos, new(35, 35)), RobotColor[robot], .4f);
+                    }
+                }
             }
         }
         game.SpriteBatch.End();
@@ -452,7 +557,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 if(LeftScare == 0)
                 {
                     LeftScare = 10;
-                    game.Audio.Play(windowscare);
+                    game.Audio.Play(windowscare, .6f);
                 }
                 lightIndex++;
             }
@@ -471,7 +576,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 if (RightScare == 0)
                 {
                     RightScare = 10;
-                    game.Audio.Play(windowscare);
+                    game.Audio.Play(windowscare, .6f);
                 }
                 lightIndex++;
             }
@@ -556,9 +661,11 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                     right_door_texture.SetData([Color.Transparent]);
                 };
             ToggleDoor(false, false);
-            fan_sound?.Stop();
-            game.Audio.Play(powerdown_sound);
-            game.Audio.Play(powerdown_ambience, volume: 0.5f);
+            fan_sound?.Dispose();
+            freddyMusic?.Dispose();
+            ovenSound?.Dispose();
+            game.Audio.Play(powerdown_sound, Character == Character.Guard ? 1f : .15f);
+            game.Audio.Play(powerdown_ambience, volume: 0.5f, isLooped: true);
             if (Character != Character.Guard)
                 ChangeCameraView(21);
         }
@@ -608,6 +715,10 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             if(fan_sound != null)
                 fan_sound.Volume = .5f;
             Usage--;
+            if (ovenSound != null && !ovenSound.IsDisposed)
+                ovenSound.Volume = .1f;
+            if (freddyMusic != null && !freddyMusic.IsDisposed)
+                freddyMusic.Volume = .1f;
         }
     }
 
@@ -641,6 +752,21 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         else
         {
             CameraData |= 3L << (3 * 2);
+        }
+
+        if(ActiveView == 9)
+        {
+            if (ovenSound != null && !ovenSound.IsDisposed)
+                ovenSound.Volume = 1;
+            if (freddyMusic != null && !freddyMusic.IsDisposed)
+                freddyMusic.Volume = 1;
+        }
+        else
+        {
+            if (ovenSound != null && !ovenSound.IsDisposed)
+                ovenSound.Volume = .1f;
+            if (freddyMusic != null && !freddyMusic.IsDisposed)
+                freddyMusic.Volume = .1f;
         }
     }
 
@@ -717,7 +843,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
 
     private void PlayRobotVocal()
     {
-        robot_vocal = game.Audio.Play(robotVocals[rng.Next(robotVocals.Length)]);
+        robot_vocal = game.Audio.Play(robotVocals[rng.Next(robotVocals.Length)], .3f);
     }
 
     private bool RightDoor = false;
@@ -831,7 +957,8 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             error = Content.Load<SoundEffect>("error");
             door = Content.Load<SoundEffect>("office/doors/door");
             powerdown_sound = Content.Load<SoundEffect>("office/powerdown");
-            powerdown_ambience = Content.Load<SoundEffect>("office/ambience2");
+            powerdown_ambience = Content.Load<SoundEffect>("office/power_ambience");
+            game_ambience = Content.Load<SoundEffect>("office/ambience");
             musicbox = Content.Load<SoundEffect>("office/musicbox");
             deepsteps = Content.Load<SoundEffect>("office/deepsteps");
             windowscare = Content.Load<SoundEffect>("office/windowscare");
@@ -848,10 +975,19 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             garbleSounds[2] = Content.Load<SoundEffect>("camera/garble3");
             garbleSounds[3] = Content.Load<SoundEffect>("camera/garble4");
 
+            kitchenOven[0] = Content.Load<SoundEffect>("camera/oven1");
+            kitchenOven[1] = Content.Load<SoundEffect>("camera/oven2");
+            kitchenOven[2] = Content.Load<SoundEffect>("camera/oven3");
+            kitchenOven[3] = Content.Load<SoundEffect>("camera/oven4");
+
             robotVocals[0] = Content.Load<SoundEffect>("office/vocal1");
             robotVocals[1] = Content.Load<SoundEffect>("office/vocal2");
             robotVocals[2] = Content.Load<SoundEffect>("office/vocal3");
             robotVocals[3] = Content.Load<SoundEffect>("office/vocal4");
+
+            freddyLaugh[0] = Content.Load<SoundEffect>("office/laugh1d");
+            freddyLaugh[1] = Content.Load<SoundEffect>("office/laugh2d");
+            freddyLaugh[2] = Content.Load<SoundEffect>("office/laugh8d");
         }
 
         leftPanel = new LeftPanelControl(Content);
@@ -898,6 +1034,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             var lightSoundEffect = Content.Load<SoundEffect>("office/doors/light");
             light_sound = game.Audio.Play(lightSoundEffect, volume: 0f, isLooped: true, unique: true);
         }
+        game.Audio.Play(game_ambience, .5f, isLooped: true);
 
         if(Character != Character.Guard)
         {
@@ -1003,7 +1140,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         ToggleCamera(false);
         ActiveJumpscare = JumpscareList.First(t => t.Item1 == Jumpscared).Item2;
         ActiveJumpscare.Reset();
-        robot_vocal?.Stop();
+        robot_vocal?.Dispose();
         robot_vocal = null;
         game.Audio.Play(scream, Character == Character.Guard || Character == Jumpscared ? 1f : .3f);
     }
@@ -1026,10 +1163,33 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         {
             case Character.Freddy:
                 Freddy = position;
+                float volume = Character == Character.Guard ? .1f : .3f;
+                if (Character == Character.Guard)
+                {
+                    volume += position switch
+                    {
+                        6 => .05f,
+                        7 => .15f,
+                        21 => .2f,
+                        _ => 0
+                    };
+                }
                 if (position == 21)
                 {
                     Jumpscared = character;
                 }
+                else
+                {
+                    if(position == 9)
+                    {
+                        freddyMusic = game.Audio.Play(musicbox, .1f);
+                    }
+                    else
+                    {
+                        freddyMusic?.Dispose();
+                    }
+                }
+                game.Audio.Play(freddyLaugh[rng.Next(freddyLaugh.Length)], volume);
                 break;
             case Character.Bonnie:
                 Bonnie = position;
@@ -1044,11 +1204,22 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 {
                     Jumpscared = character;
                 }
+                else
+                {
+                    if(position == 9)
+                    {
+                        ovenSound = game.Audio.Play(kitchenOven[rng.Next(kitchenOven.Length)], .1f);
+                    }
+                    else
+                    {
+                        ovenSound?.Dispose();
+                    }
+                }
                 break;
             case Character.Foxy:
                 if(position < Foxy)
                 {
-                    game.Audio.Play(knock);
+                    game.Audio.Play(knock, (30+rng.Next(50))/100f);
                 }
                 Foxy = position;
                 if (Foxy == 5)
@@ -1115,7 +1286,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
             if (CameraGarble)
             {
                 CameraGarble = false;
-                cam_garble_sound?.Stop();
+                cam_garble_sound?.Dispose();
                 cam_garble_sound = null;
                 ChangeCameraView(ActiveView, false);
             }

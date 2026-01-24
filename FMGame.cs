@@ -273,6 +273,7 @@ public class FMGame : Game
             _screenManager.ShowScreen(new Scenes.Splash(this));
             return;
         }
+        Audio.Volume = settings.Volume;
         IsRestart = true;
         SpriteBatch = new SpriteBatch(GraphicsDevice);
         RenderTarget = new RenderTarget2D(GraphicsDevice, WindowSize.X, WindowSize.Y);

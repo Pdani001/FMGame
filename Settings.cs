@@ -13,6 +13,7 @@ namespace ReFMGame
             {BindKey.Screenshot, new(Key: Keys.F2)},
             {BindKey.Debug, new(Key: Keys.F1, Ctrl: true) },
         };
+        public float Volume { get; set; } = 1f;
         public int ServerIndex { get; set; } = 0;
         public string CustomAddress { get; set; } = "";
     }

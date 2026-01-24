@@ -17,7 +17,10 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
 {
     public Texture2D bg_texture { get; private set; }
     public Texture2D logo { get; private set; }
+    private SoundEffect ambience;
+    private SoundEffect theme;
     private SoundEffectInstance music = null;
+    private int RandomTheme = 0;
     public TextureAnimation bg_animation { get; private set; }
     public TextureAnimation static_animation { get; private set; }
     public BitmapFont bmfont { get; private set; }
@@ -60,6 +63,17 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
 
     public override void Update(GameTime gameTime)
     {
+        static_animation.Animate(gameTime);
+        if(!game.Audio.NoAudio && !RareBGM && music?.State != SoundState.Playing)
+        {
+            RandomTheme = rng.Next(RandomTheme == 5 ? 4 : 5) + 1;
+            music?.Dispose();
+            music = RandomTheme == 5 ? theme.CreateInstance() : ambience.CreateInstance();
+            music.Volume = 0.2f;
+            music.Play();
+        }
+        if (!IsActive)
+            return;
         if (lobby)
         {
             lobby = false;
@@ -68,7 +82,6 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
         }
         Mouse.SetCursor(MouseCursor.Arrow);
         startPadding = "    ";
-        static_animation.Animate(gameTime);
         if (start.Contains(game.MouseState.Position))
         {
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
@@ -129,6 +142,7 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
     private readonly Random rng = new(Guid.NewGuid().GetHashCode());
     public override void Initialize()
     {
+        UpdateWhenInactive = true;
         Mouse.SetCursor(MouseCursor.Arrow);
         BGOpacityTimer = new Timer(90);
         BGOpacityTimer.Elapsed += (_, _) =>
@@ -179,11 +193,15 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
             {
                 Debug.WriteLine("I ❤ FNaF57");
                 music = Content.Load<SoundEffect>("menu/fnaf57")?.CreateInstance();
+                music.IsLooped = true;
                 music.Volume = 0.5f;
             }
             else
             {
-                music = Content.Load<SoundEffect>("menu/ambience")?.CreateInstance();
+                ambience = Content.Load<SoundEffect>("menu/ambience");
+                theme = Content.Load<SoundEffect>("menu/theme");
+                RandomTheme = rng.Next(RandomTheme == 5 ? 4 : 5) + 1;
+                music = RandomTheme == 5 ? theme.CreateInstance() : ambience.CreateInstance();
                 music.Volume = 0.2f;
             }
         }
@@ -196,7 +214,6 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
         static_animation = new StaticAnim(Content);
         if (music != null)
         {
-            music.IsLooped = true;
             music.Play();
         }
         startPadSize = bmfont.MeasureString(startPadding);

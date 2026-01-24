@@ -60,7 +60,6 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
     public override void Update(GameTime gameTime)
     {
         _keyboardListener.Update(gameTime);
-        menu.static_animation.Animate(gameTime);
         if (!game.UpdateKeyBind && backButton.Contains(game.MouseState.Position))
         {
             if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left))
@@ -73,6 +72,8 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
     ScrollViewer ScrollView;
     Button FullscreenBtn;
     Button ScreenshotBtn;
+    Label VolumeLabel;
+    Slider VolumeSlider;
     BindKey? update = null;
     public override void LoadContent()
     {
@@ -168,6 +169,32 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
 
         AddSpacing(panel);
 
+        VolumeLabel = new Label
+        {
+            Text = $"Volume ({game.Audio.Volume * 100}%)",
+        };
+        var volumeLblVisual = (LabelVisual)VolumeLabel.Visual;
+        volumeLblVisual.CustomFontFile = "font/ui20.fnt";
+        volumeLblVisual.UseCustomFont = true;
+        VolumeSlider = new Slider
+        {
+            Value = game.Audio.Volume * 100,
+            Minimum = 0,
+            Maximum = 100,
+            TicksFrequency = 1,
+            IsSnapToTickEnabled = true,
+            WidthUnits = Gum.DataTypes.DimensionUnitType.PercentageOfParent,
+            Width = 100,
+        };
+        VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
+        var volumeSliderVisual = (SliderVisual)VolumeSlider.Visual;
+        volumeSliderVisual.TrackBackgroundColor = Color.Lerp(Color.Red, Color.Green, game.Audio.Volume);
+        volumeSliderVisual.ThumbInstance.BackgroundColor = Styling.ActiveStyle.Colors.InputBackground;
+        panel.AddChild(VolumeLabel);
+        panel.AddChild(VolumeSlider);
+
+        AddSpacing(panel);
+
         var serverLbl = new Label
         {
             Text = "Server",
@@ -205,6 +232,15 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
 
 
         base.LoadContent();
+    }
+
+    private void VolumeSlider_ValueChanged(object sender, EventArgs e)
+    {
+        VolumeLabel.Text = $"Volume ({VolumeSlider.Value}%)";
+        game.Audio.Volume = (float)(VolumeSlider.Value / 100);
+        game.settings.Volume = game.Audio.Volume;
+        var volumeSliderVisual = (SliderVisual)VolumeSlider.Visual;
+        volumeSliderVisual.TrackBackgroundColor = Color.Lerp(Color.Red, Color.Green, game.Audio.Volume);
     }
 
     private void CustomServer_TextChanged(object sender, EventArgs e)
@@ -354,6 +390,7 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
         _keyboardListener.KeyPressed -= KeyPressed;
         FullscreenBtn.Click -= FullscreenBtn_Click;
         ScreenshotBtn.Click -= ScreenshotBtn_Click;
+        VolumeSlider.ValueChanged -= VolumeSlider_ValueChanged;
         CustomServer.TextChanged -= CustomServer_TextChanged;
         ServerSelect.SelectionChanged -= ServerSelect_SelectionChanged;
         base.UnloadContent();

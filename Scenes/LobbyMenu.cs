@@ -58,7 +58,6 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
     {
         listClick -= (float)(listClick > 0 ? Math.Min(listClick, gameTime.ElapsedGameTime.TotalSeconds) : 0);
         _mouseListener.Update(gameTime);
-        menu.static_animation.Animate(gameTime);
         if ((backButton.Contains(game.MouseState.Position) && MouseExtended.GetState().WasButtonPressed(MouseButton.Left)) || KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
         {
             ScreenManager.CloseScreen();

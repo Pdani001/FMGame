@@ -752,6 +752,30 @@
 /processorParam:TextureFormat=Color
 /build:camera/map.png
 
+#begin camera/oven1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:camera/oven1.ogg
+
+#begin camera/oven2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:camera/oven2.ogg
+
+#begin camera/oven3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:camera/oven3.ogg
+
+#begin camera/oven4.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:camera/oven4.ogg
+
 #begin camera/rec.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -3352,6 +3376,12 @@
 /processorParam:TextureFormat=Color
 /build:menu/rare.png
 
+#begin menu/theme.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:menu/theme.ogg
+
 #begin MonoGameLogo-small.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -3424,11 +3454,11 @@
 /processorParam:Quality=Best
 /build:nextday/chimes.ogg
 
-#begin office/ambience2.ogg
+#begin office/ambience.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
-/build:office/ambience2.ogg
+/build:office/ambience.ogg
 
 #begin office/black.png
 /importer:TextureImporter
@@ -4480,6 +4510,30 @@
 /processorParam:Quality=Best
 /build:office/knock.ogg
 
+#begin office/laugh1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:office/laugh1.ogg
+
+#begin office/laugh1d.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:office/laugh1d.ogg
+
+#begin office/laugh2d.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:office/laugh2d.ogg
+
+#begin office/laugh8d.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:office/laugh8d.ogg
+
 #begin office/left-bonnie.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -4509,6 +4563,12 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:office/musicbox.ogg
+
+#begin office/power_ambience.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:office/power_ambience.ogg
 
 #begin office/powerdown.ogg
 /importer:OggImporter
@@ -4594,6 +4654,18 @@
 /processorParam:Quality=Best
 /build:office/windowscare.ogg
 
+#begin select/bonnie_text.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=False
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:select/bonnie_text.png
+
 #begin select/bonnie.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -4617,6 +4689,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:select/checkmark.png
+
+#begin select/chica_text.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=False
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:select/chica_text.png
 
 #begin select/chica.png
 /importer:TextureImporter
@@ -4642,6 +4726,18 @@
 /processorParam:TextureFormat=Color
 /build:select/crossmark.png
 
+#begin select/foxy_text.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=False
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:select/foxy_text.png
+
 #begin select/foxy.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -4654,6 +4750,18 @@
 /processorParam:TextureFormat=Color
 /build:select/foxy.png
 
+#begin select/freddy_text.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=False
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:select/freddy_text.png
+
 #begin select/freddy.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -4665,6 +4773,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:select/freddy.png
+
+#begin select/guard_text.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=False
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:select/guard_text.png
 
 #begin select/guard.png
 /importer:TextureImporter
