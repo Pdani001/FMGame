@@ -1159,6 +1159,14 @@ public class Office(FMGame game, Character character) : GameScreen(game)
     {
         if (character == Character.Guard)
             return;
+        short prevPosition = character switch
+        {
+            Character.Freddy => Freddy,
+            Character.Bonnie => Bonnie,
+            Character.Chica => Chica,
+            Character.Foxy => Foxy,
+            _ => -1
+        };
         switch (character)
         {
             case Character.Freddy:
@@ -1228,8 +1236,10 @@ public class Office(FMGame game, Character character) : GameScreen(game)
                 }
                 break;
         }
-        if(Character == character)
+        if (Character == character)
             ChangeCameraView(position);
+        else if(Character != Character.Guard && (ActiveView == position || ActiveView == prevPosition))
+            ChangeCameraView(ActiveView);
     }
 
     private void Client_GameMusicbox(int state)
@@ -1271,7 +1281,7 @@ public class Office(FMGame game, Character character) : GameScreen(game)
         BlockLeft = GameState.Left.Blocked;
         GameState.Left.Light = (!BlockLeft || !GameState.Left.Light) && GameState.Left.Light;
         BlockRight = GameState.Right.Blocked;
-        GameState.Left.Light = (!BlockRight || !GameState.Right.Light) && GameState.Right.Light;
+        GameState.Right.Light = (!BlockRight || !GameState.Right.Light) && GameState.Right.Light;
         if(GameState.Left.Light != LeftLight)
         {
             ToggleLight(true);
