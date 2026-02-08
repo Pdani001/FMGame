@@ -217,6 +217,9 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
             SelectedIndex = game.ServerIndex,
         };
         ServerSelect.SelectionChanged += ServerSelect_SelectionChanged;
+        var serverSelectVisual = (ComboBoxVisual)ServerSelect.Visual;
+        serverSelectVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
+        serverSelectVisual.TextInstance.UseCustomFont = true;
         panel.AddChild(ServerSelect);
         AddSpacing(panel, false);
         CustomServer = new TextBox
@@ -228,6 +231,11 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
             Text = game.CustomAddress,
         };
         CustomServer.TextChanged += CustomServer_TextChanged;
+        var customServerVisual = (TextBoxVisual)CustomServer.Visual;
+        customServerVisual.TextInstance.CustomFontFile = "font/ui16.fnt";
+        customServerVisual.TextInstance.UseCustomFont = true;
+        customServerVisual.PlaceholderTextInstance.CustomFontFile = "font/ui16.fnt";
+        customServerVisual.PlaceholderTextInstance.UseCustomFont = true;
         panel.AddChild(CustomServer);
 
 
@@ -267,6 +275,7 @@ public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
         Keys.RightAlt,
         Keys.LeftWindows,
         Keys.RightWindows,
+        Keys.Enter,
     ];
 
     private readonly Keys[] _ignoreChar = [

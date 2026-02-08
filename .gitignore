@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /Properties/launchSettings.json
 /Content/font/Pally.ttf
+/version.txt

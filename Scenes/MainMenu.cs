@@ -27,7 +27,9 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
     public BitmapFont verfont { get; private set; }
     public string vertext { get; private set; }
     public Vector2 verpos { get; private set; }
-    private Rectangle start = new(128, 352, 138, 32);
+    private sbyte active = 0;
+    private bool mouseActive = false;
+    private Rectangle start = new(128, 352, 108, 32);
     private Rectangle settings = new(128, 400, 196, 32);
     private Rectangle credits = new(128, 448, 172, 32);
     private string startPadding = "    ";
@@ -45,7 +47,7 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
         bgcolor.A = (byte)(255 - BGOpacity);
         game.SpriteBatch.Draw(bg_texture, Vector2.Zero, null, bgcolor, 0, Vector2.Zero , 1, SpriteEffects.None, 0);
         
-        game.SpriteBatch.DrawString(bmfont, startPadding+"Start", start.Location.ToVector2() - startPadSize, Color.White);
+        game.SpriteBatch.DrawString(bmfont, startPadding+"Play", start.Location.ToVector2() - startPadSize, Color.White);
         game.SpriteBatch.DrawString(bmfont, settingsPadding+"Settings", settings.Location.ToVector2() - settingsPadSize, Color.White);
         game.SpriteBatch.DrawString(bmfont, creditsPadding+"Credits", credits.Location.ToVector2() - creditsPadSize, Color.White);
         game.SpriteBatch.Draw(logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
@@ -80,55 +82,67 @@ public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : Game
             ScreenManager.ShowScreen(new LobbyMenu(game, this));
             return;
         }
-        Mouse.SetCursor(MouseCursor.Arrow);
-        startPadding = "    ";
-        if (start.Contains(game.MouseState.Position))
+        if(game.IsActive && KeyboardExtended.GetState().WasKeyPressed(Keys.Up))
         {
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
-            {
-                ScreenManager.ShowScreen(new LobbyMenu(game, this));
-            }
-            else
-            {
-                startPadding = " >> ";
-            }
+            active -= 1;
+            if(active < 0)
+                active = 2;
+        }
+        if(game.IsActive && KeyboardExtended.GetState().WasKeyPressed(Keys.Down))
+        {
+            active += 1;
+            if(active > 2)
+                active = 0;
+        }
+
+        mouseActive = game.IsActive && (start.Contains(game.MouseState.Position) || settings.Contains(game.MouseState.Position) || credits.Contains(game.MouseState.Position));
+        Mouse.SetCursor(MouseCursor.Arrow);
+        startPadding = active != 0 ? "    " : " >> ";
+        if (game.IsActive && start.Contains(game.MouseState.Position))
+        {
+            active = 0;
+            startPadding = " >> ";
         }
         startPadSize = bmfont.MeasureString(startPadding);
         startPadSize.Y = 0;
 
-        settingsPadding = "    ";
-        if (settings.Contains(game.MouseState.Position))
+        settingsPadding = active != 1 ? "    " : " >> ";
+        if (game.IsActive && settings.Contains(game.MouseState.Position))
         {
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
-            {
-                ScreenManager.ShowScreen(new SettingsMenu(game, this));
-            }
-            else
-            {
-                settingsPadding = " >> ";
-            }
+            active = 1;
+            settingsPadding = " >> ";
         }
         settingsPadSize = bmfont.MeasureString(settingsPadding);
         settingsPadSize.Y = 0;
 
-        creditsPadding = "    ";
-        if (credits.Contains(game.MouseState.Position))
+        creditsPadding = active != 2 ? "    " : " >> ";
+        if (game.IsActive && credits.Contains(game.MouseState.Position))
         {
-            if (MouseExtended.GetState().WasButtonPressed(MouseButton.Left) && game.IsActive)
-            {
-                ScreenManager.ShowScreen(new CreditsMenu(game, this));
-            }
-            else
-            {
-                creditsPadding = " >> ";
-            }
+            active = 2;
+            creditsPadding = " >> ";
         }
         creditsPadSize = bmfont.MeasureString(creditsPadding);
         creditsPadSize.Y = 0;
 
+        if((mouseActive && MouseExtended.GetState().WasButtonPressed(MouseButton.Left)) || (game.IsActive && KeyboardExtended.GetState().WasKeyPressed(Keys.Enter)))
+        {
+            switch(active)
+            {
+                case 0:
+                    ScreenManager.ShowScreen(new LobbyMenu(game, this));
+                    break;
+                case 1:
+                    ScreenManager.ShowScreen(new SettingsMenu(game, this));
+                    break;
+                case 2:
+                    ScreenManager.ShowScreen(new CreditsMenu(game, this));
+                    break;
+            }
+        }
+
         if (game.DebugMode)
         {
-            if (KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
+            if (game.IsActive && KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
                 game.Exit();
         }
     }
