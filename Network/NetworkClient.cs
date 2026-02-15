@@ -22,7 +22,7 @@ namespace ReFMGame.Network
         public Client Self { get; private set; } = null;
         private string Session => Self?.Id.ToString() ?? "";
 
-        public const int PROTOCOL_VERSION = 4;
+        public const int PROTOCOL_VERSION = 5;
 
         public bool IsConnected => _client?.IsConnected ?? false;
 
@@ -43,8 +43,10 @@ namespace ReFMGame.Network
         public event Action<Client, string> ChannelUserLeft;
         public event Action<Client, string> ChatMessageReceived;
 
+        public event Action OwnerChange;
         public event Action<Client, Character> CharacterSelected;
         public event Action<Character, bool> UserReady;
+        public event Action<string, bool> GamemodeChanged;
         public event Action<int> GameCountdown;
         public event Action<CharacterPosition[]> GameStart;
         public event Action GameAbort;
@@ -152,12 +154,29 @@ namespace ReFMGame.Network
 
         public void SelectCharacter(int character)
         {
-            Send(new { Session, type = "select", value = character });
+            Send(new { Session, type = "select", character });
         }
 
         public void SetReady(bool ready)
         {
             Send(new { Session, type = "ready", value = ready ? 1 : 0 });
+        }
+
+        public void SetGamemode(string gamemode, bool enabled)
+        {
+            Send(new { Session, type = "gamemode", text = gamemode.ToLower(), value = enabled ? 1 : 0 });
+        }
+
+        public void SetMoveTime(Character character, int time, string bound)
+        {
+            if(bound != "min" && bound != "max")
+                throw new ArgumentException("Bound must be either `min` or `max`");
+            Send(new { Session, type = "custom_night", character = (int)character, value = time, text = bound });
+        }
+
+        public void SetAILevel(Character character, int level)
+        {
+            Send(new { Session, type = "ai_level", character = (int)character, value = level });
         }
 
         // ---- In-Game ----
@@ -295,6 +314,8 @@ namespace ReFMGame.Network
 
                     case "change_owner":
                         Channel.Owner = msg.Client.Id;
+                        if(Channel.Owner == Self.Id)
+                            OwnerChange?.Invoke();
                         break;
 
                     case "server_secret":
@@ -303,11 +324,35 @@ namespace ReFMGame.Network
                         break;
 
                     case "select":
-                        CharacterSelected?.Invoke(msg.Client, (Character)msg.Value);
+                        CharacterSelected?.Invoke(msg.Client, msg.Character.GetValueOrDefault(Character.None));
                         break;
 
                     case "ready":
-                        UserReady?.Invoke((Character)msg.Value, msg.Ready);
+                        UserReady?.Invoke(msg.Character.GetValueOrDefault(Character.None), msg.Ready);
+                        break;
+
+                    case "gamemode":
+                        GamemodeChanged?.Invoke(msg.Text, msg.Value != 0);
+                        break;
+
+                    case "custom_night":
+                        int mtindex = Channel.MoveTimes.FindIndex(mt => mt.Character == msg.MoveTime.Character);
+                        if (mtindex == -1)
+                        {
+                            Debug.WriteLine($"NetworkClient: Received move time for character {msg.MoveTime.Character} but no such character was found in the channel's move time list");
+                            return;
+                        }
+                        Channel.MoveTimes[mtindex] = msg.MoveTime;
+                        break;
+
+                    case "ai_level":
+                        int ailvlindex = Channel.AILevels.FindIndex(mt => mt.Character == msg.AILevel.Character);
+                        if (ailvlindex == -1)
+                        {
+                            Debug.WriteLine($"NetworkClient: Received custom AI level for character {msg.AILevel.Character} but no such character was found in the channel's AI level list");
+                            return;
+                        }
+                        Channel.AILevels[ailvlindex] = msg.AILevel;
                         break;
 
                     case "game_countdown":

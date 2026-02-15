@@ -139,14 +139,13 @@ public class FMGame : Game
         {
             _graphics.PreferredBackBufferWidth = WindowSize.X;
             _graphics.PreferredBackBufferHeight = WindowSize.Y;
-            GumUI.Cursor.TransformMatrix = Matrix.Identity;
         }
         else
         {
             _graphics.PreferredBackBufferWidth = GraphicsDevice.Adapter.CurrentDisplayMode.Width;
             _graphics.PreferredBackBufferHeight = GraphicsDevice.Adapter.CurrentDisplayMode.Height;
-            GumUI.Cursor.TransformMatrix = Matrix.CreateScale((float)WindowSize.X / CurrentWindowSize.X, (float)WindowSize.Y / CurrentWindowSize.Y, 1f);
         }
+        GumUI.Cursor.TransformMatrix = Matrix.CreateScale((float)WindowSize.X / CurrentWindowSize.X, (float)WindowSize.Y / CurrentWindowSize.Y, 1f);
         _graphics.ToggleFullScreen();
         Vector2 oldPos = MouseState.Position;
         GumUI.CanvasWidth = _graphics.PreferredBackBufferWidth;
@@ -154,7 +153,7 @@ public class FMGame : Game
         RenderTargetDestination = GetRenderTargetDestination(WindowSize, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
         MouseState.SetRenderTargetDestination(RenderTargetDestination);
         MouseState.SetScreenScale(GetRenderTargetScale(WindowSize, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight));
-        MouseState.SetGindowSize(WindowSize);
+        MouseState.SetWindowSize(WindowSize);
         Point newPos = MouseState.ScalePositionUp(oldPos);
         Mouse.SetPosition(newPos.X, newPos.Y);
     }

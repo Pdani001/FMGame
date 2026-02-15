@@ -153,7 +153,7 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
             Placeholder = "Nickname",
             MaxLength = 24,
             IsEnabled = false,
-            Text = game.Client.Self?.Nick ?? "",
+            Text = game.settings.Nickname ?? "",
         };
         var nicknameVisual = (TextBoxVisual)nickname.Visual;
         nicknameVisual.TextInstance.CustomFontFile = "font/ui20.fnt";
@@ -291,6 +291,7 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         joining = true;
         Channel channel = channels[lobbylist.SelectedIndex];
         game.Client.JoinChannel(channel.Name, nickname.Text, password: password.Password);
+        game.settings.Nickname = nickname.Text;
         lobbylist.IsEnabled = false;
         join.IsEnabled = false;
         create.IsEnabled = false;
@@ -305,6 +306,7 @@ public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
         InfoText = "Creating lobby...";
         joining = true;
         game.Client.CreateChannel(channelname.Text, nickname.Text);
+        game.settings.Nickname = nickname.Text;
         lobbylist.IsEnabled = false;
         join.IsEnabled = false;
         create.IsEnabled = false;

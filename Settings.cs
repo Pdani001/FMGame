@@ -16,6 +16,7 @@ namespace ReFMGame
         public float Volume { get; set; } = 1f;
         public int ServerIndex { get; set; } = 0;
         public string CustomAddress { get; set; } = "";
+        public string Nickname { get; set; } = "";
     }
 
     [JsonSourceGenerationOptions(

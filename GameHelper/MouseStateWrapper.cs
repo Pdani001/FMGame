@@ -41,7 +41,7 @@ public class MouseStateWrapper
         }
     }
 
-    internal void SetGindowSize(Point gameSize)
+    internal void SetWindowSize(Point gameSize)
     {
         this.gameSize = gameSize;
     }
