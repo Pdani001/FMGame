@@ -4,11 +4,12 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
+using ReFMGame.GameHelper;
 using System;
 using System.Collections.Generic;
 
 namespace ReFMGame.Scenes;
-public class Splash(FMGame game) : GameScreen(game)
+public class Splash(GameExtended game) : GameScreen(game)
 {
     private readonly List<Texture2D> textures = [];
     private readonly Rectangle GameView = new(new(0, 0), game.WindowSize);

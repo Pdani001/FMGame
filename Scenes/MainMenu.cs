@@ -13,7 +13,7 @@ using System.Diagnostics;
 using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
-public class MainMenu(FMGame game, bool lobby = false, bool rare = false) : GameScreen(game)
+public class MainMenu(GameExtended game, bool lobby = false, bool rare = false) : GameScreen(game)
 {
     public Texture2D bg_texture { get; private set; }
     public Texture2D logo { get; private set; }

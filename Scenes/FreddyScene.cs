@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReFMGame.Scenes;
-public class FreddyScene(FMGame game) : GameScreen(game)
+public class FreddyScene(GameExtended game) : GameScreen(game)
 {
 	private TextureAnimation freddy;
     private TextureAnimation blip;

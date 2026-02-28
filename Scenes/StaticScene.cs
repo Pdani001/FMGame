@@ -3,14 +3,13 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Screens;
 using ReFMGame.Animations;
-using ReFMGame.Animations.Jumpscare;
 using ReFMGame.GameHelper;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReFMGame.Scenes;
-public class StaticScene(FMGame game) : GameScreen(game)
+public class StaticScene(GameExtended game) : GameScreen(game)
 {
     private TextureAnimation blip;
     private TextureAnimation staticAnim;

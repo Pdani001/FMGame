@@ -2,13 +2,16 @@
 name = "play"
 path = "FMGame.exe"
 platform = "windows"
+scope = "profile:me"
 
 [[actions]]
 name = "play"
 path = "FMGame"
 platform = "linux"
+scope = "profile:me"
 
 [[actions]]
 name = "play"
 path = "FMGame"
 platform = "osx"
+scope = "profile:me"

@@ -6,37 +6,24 @@ using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Input;
 using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
-using MonoGameGum;
 using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
-using System.Runtime;
 using System.Runtime.InteropServices;
 
 namespace ReFMGame;
 
-public class FMGame : Game
+public class FMGame : GameExtended
 {
-    public readonly Point WindowSize = new(1280, 720);
     private readonly KeyboardListener _keyboardListener;
-    private readonly GraphicsDeviceManager _graphics;
     private readonly ScreenManager _screenManager;
-    public SpriteBatch SpriteBatch;
-    public RenderTarget2D RenderTarget { get; private set; }
     public Rectangle RenderTargetDestination { get; private set; }
     private BitmapFont _font;
     private SmartFramerate smartFPS;
-    public GumService GumUI => GumService.Default;
-    public MouseStateWrapper MouseState { get; private set; }
-    public AudioController Audio { get; private set; }
-
-    public NetworkClient Client { get; private set; }
 
     /**
     * <summary>Get the current FPS</summary>
@@ -55,28 +42,9 @@ public class FMGame : Game
     */
     private const int TargetFPS = 60;
 
-    public string Version { get; private set; }
 
-    public readonly Settings settings = new Settings();
 
-    public bool UpdateKeyBind { get; set; } = false;
-    public bool DebugMode { get; private set; } = false;
-    public int ServerIndex { get => settings.ServerIndex; set
-        {
-            settings.ServerIndex = value;
-            UpdateClient();
-        }
-    }
-    public string CustomAddress { get => settings.CustomAddress; set
-        {
-            settings.CustomAddress = value;
-            if(ServerIndex == 2)
-                UpdateClient();
-        }
-    }
-    public string ServerSecret { get; private set; }
-
-    public FMGame()
+    public FMGame() : base(new(1280,720))
     {
         string key = "";
         foreach (string value in Environment.GetCommandLineArgs()[1..])
@@ -97,7 +65,6 @@ public class FMGame : Game
             }
         }
         _keyboardListener = new KeyboardListener();
-        _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
         IsFixedTimeStep = true;
@@ -120,16 +87,6 @@ public class FMGame : Game
             if(_graphics == null)
                 return false;
             return _graphics.IsFullScreen;
-        }
-    }
-
-    public Point CurrentWindowSize
-    {
-        get
-        {
-            if (_graphics == null)
-                return new(0,0);
-            return new(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
         }
     }
 
@@ -193,44 +150,6 @@ public class FMGame : Game
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             WindowSubclass.Subclass(Window.Handle);
-        }
-    }
-
-    private void UpdateClient()
-    {
-        if (Client != null && Client.IsConnected)
-        {
-            return;
-        }
-        ServerSecret = "";
-        switch (ServerIndex)
-        {
-            case 0:
-                Client = new NetworkClient("pghost.org", 7121);
-                CustomAddress = "";
-                break;
-            case 1:
-                Client = new NetworkClient("pghost.org", 7122);
-                CustomAddress = "";
-                break;
-            default:
-                ServerSecret = LaunchParameters.TryGetValue("-secret", out string value) ? value : "";
-                var host = "";
-                var port = 7121;
-                if(IPEndPoint.TryParse(CustomAddress, out IPEndPoint ip))
-                {
-                    host = ip.Address.ToString();
-                    port = ip.Port;
-                }else
-                {
-                    var split = CustomAddress.Split(':');
-                    host = split[0];
-                    if(split.Length > 1 && !string.IsNullOrEmpty(split[1].Trim()))
-                        int.TryParse(split[1], out port);
-                }
-                Debug.WriteLine($"host = '{host}'; port = {port}");
-                Client = new NetworkClient(host, port);
-                break;
         }
     }
 
@@ -364,25 +283,5 @@ public class FMGame : Game
         else if (resolutionRatio > screenRatio)
             scale = (float)bounds.X / resolution.X;
         return scale;
-    }
-
-    public Texture2D GetScreenshot(bool screen = false)
-    {
-        Texture2D screenshot;
-        Color[] colors;
-        if (screen)
-        {
-            screenshot = new Texture2D(GraphicsDevice, CurrentWindowSize.X, CurrentWindowSize.Y);
-            colors = new Color[CurrentWindowSize.X * CurrentWindowSize.Y];
-            GraphicsDevice.GetBackBufferData(colors);
-        }
-        else
-        {
-            screenshot = new Texture2D(GraphicsDevice, WindowSize.X, WindowSize.Y);
-            colors = new Color[WindowSize.X * WindowSize.Y];
-            RenderTarget.GetData(colors);
-        }
-        screenshot.SetData(colors);
-        return screenshot;
     }
 }

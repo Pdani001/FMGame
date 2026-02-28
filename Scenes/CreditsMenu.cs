@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 
 namespace ReFMGame.Scenes;
-public class CreditsMenu(FMGame game, MainMenu menu) : GameScreen(game)
+public class CreditsMenu(GameExtended game, MainMenu menu) : GameScreen(game)
 {
     readonly Rectangle backButton = new(0, 0, 128, 48);
     Vector2 backPos;

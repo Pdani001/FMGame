@@ -9,13 +9,14 @@ using MonoGame.Extended.Input;
 using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
+using ReFMGame.GameHelper;
 using ReFMGame.Network;
 using System;
 using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
-public class LobbyMenu(FMGame game, MainMenu menu) : GameScreen(game)
+public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
 {
     readonly Rectangle backButton = new(0, 0, 128, 48);
     Vector2 backPos;

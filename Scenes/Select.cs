@@ -16,11 +16,10 @@ using ReFMGame.Network;
 using RenderingLibrary.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
-public class Select(FMGame game, bool lobby = true) : GameScreen(game)
+public class Select(GameExtended game, bool lobby = true) : GameScreen(game)
 {
     private OrthographicCamera _camera;
     private NumberRenderer CustomNightFont;

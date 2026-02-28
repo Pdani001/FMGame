@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReFMGame.Scenes;
-public class Loading(FMGame game, Character character = Character.Guard) : GameScreen(game)
+public class Loading(GameExtended game, Character character = Character.Guard) : GameScreen(game)
 {
 	private Texture2D spinner;
 	private FrameAnimation animation;

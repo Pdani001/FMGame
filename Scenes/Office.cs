@@ -21,7 +21,7 @@ using Timer = System.Timers.Timer;
 
 namespace ReFMGame.Scenes;
 
-public class Office(FMGame game, Character character) : GameScreen(game)
+public class Office(GameExtended game, Character character) : GameScreen(game)
 {
     private Texture2D bg_texture;
     private Texture2D camera_texture;

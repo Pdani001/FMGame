@@ -15,7 +15,7 @@ using System.Diagnostics;
 using System.Linq;
 
 namespace ReFMGame.Scenes;
-public class SettingsMenu(FMGame game, MainMenu menu) : GameScreen(game)
+public class SettingsMenu(GameExtended game, MainMenu menu) : GameScreen(game)
 {
     private KeyboardListener _keyboardListener;
     readonly Rectangle backButton = new(0, 0, 128, 48);

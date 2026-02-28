@@ -7,7 +7,7 @@ using System;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Scenes;
-public class GameOver(FMGame game, Texture2D screenshot) : GameScreen(game)
+public class GameOver(GameExtended game, Texture2D screenshot) : GameScreen(game)
 {
     private Texture2D bg;
     private Texture2D text;

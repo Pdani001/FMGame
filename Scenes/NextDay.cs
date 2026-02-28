@@ -7,7 +7,7 @@ using System;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Scenes;
-public class NextDay(FMGame game, Texture2D screenshot) : GameScreen(game)
+public class NextDay(GameExtended game, Texture2D screenshot) : GameScreen(game)
 {
     private Texture2D five;
     private Texture2D six;
