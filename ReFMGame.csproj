@@ -21,6 +21,17 @@
     <AssemblyName>$(Title)</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="GameHelper\**" />
+    <Content Remove="GameHelper\**" />
+    <EmbeddedResource Remove="GameHelper\**" />
+    <None Remove="GameHelper\**" />
+
+    <Compile Remove="Network\**" />
+    <Content Remove="Network\**" />
+    <EmbeddedResource Remove="Network\**" />
+    <None Remove="Network\**" />
+  </ItemGroup>
+  <ItemGroup>
     <None Remove="Icon.ico" />
     <None Remove="Icon.bmp" />
   </ItemGroup>
@@ -44,8 +55,8 @@
     <PackageReference Include="NetCoreServer" Version="8.0.7" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ReFMGame.GameHelper\ReFMGame.GameHelper.csproj" />
-    <ProjectReference Include="..\ReFMGame.Network\ReFMGame.Network.csproj" />
+    <ProjectReference Include="GameHelper\GameHelper.csproj" />
+    <ProjectReference Include="Network\Network.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

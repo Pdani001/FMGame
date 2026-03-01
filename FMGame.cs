@@ -216,7 +216,6 @@ public class FMGame : GameExtended
         MouseState.SetMouseState(Mouse.GetState());
         MouseExtended.Update();
         KeyboardExtended.Update();
-        var keyboard = KeyboardExtended.GetState();
         Audio.Update();
         Client.Update();
 

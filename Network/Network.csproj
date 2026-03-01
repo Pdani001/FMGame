@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <PackageId>FMGame.Network</PackageId>
+    <Title>FMGame.Network</Title>
+    <AssemblyName>$(Title)</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>Pdani</Authors>
+    <Product>$(Title)</Product>
+    <Description>Networking classes for Fazbear Multiplayer</Description>
+    <Copyright>$(Authors)</Copyright>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetCoreServer" Version="8.0.7" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,83 @@
+﻿using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework;
+
+namespace ReFMGame.GameHelper;
+
+public class MouseStateWrapper
+{
+    private Point gameSize;
+    private MouseState mouseState;
+    private Vector2 scaledMousePosition;
+    private Rectangle renderTargetDestination;
+    private float screenScale;
+
+    public bool Scaled { get; set; } = true;
+
+    public Vector2 Position => Scaled ? scaledMousePosition : mouseState.Position.ToVector2();
+
+    public MouseState MouseState => mouseState;
+
+    public MouseStateWrapper(bool scaled = true) => Scaled = scaled;
+
+    public void SetMouseState(MouseState mouseState)
+    {
+        this.mouseState = mouseState;
+        scaledMousePosition = mouseState.Position.ToVector2();
+        if(screenScale == 1.0f)
+        {
+            float xScale = (float)gameSize.X / renderTargetDestination.Width;
+            scaledMousePosition.X *= xScale;
+            scaledMousePosition.X = (int)Math.Round(scaledMousePosition.X, 0, MidpointRounding.AwayFromZero);
+            float yScale = (float)gameSize.Y / renderTargetDestination.Height;
+            scaledMousePosition.Y *= yScale;
+            scaledMousePosition.Y = (int)Math.Round(scaledMousePosition.Y, 0, MidpointRounding.AwayFromZero);
+        }
+        else
+        {
+            scaledMousePosition.X -= renderTargetDestination.X;
+            scaledMousePosition.Y -= renderTargetDestination.Y;
+            scaledMousePosition /= screenScale;
+        }
+    }
+
+    public void SetWindowSize(Point gameSize)
+    {
+        this.gameSize = gameSize;
+    }
+
+    public void SetRenderTargetDestination(Rectangle renderTargetDestination)
+    {
+        gameSize = new(renderTargetDestination.Width, renderTargetDestination.Height);
+        this.renderTargetDestination = renderTargetDestination;
+    }
+
+    public void SetScreenScale(float scale)
+    {
+        screenScale = scale;
+    }
+
+    public void SetMouseLocation(Point location) => SetMouseState(new MouseState(location.X, location.Y, mouseState.ScrollWheelValue,
+        mouseState.LeftButton, mouseState.MiddleButton, mouseState.RightButton, mouseState.XButton1, mouseState.XButton2));
+
+    public void SetMouseLocation(int x, int y) => SetMouseState(new MouseState(x, y, mouseState.ScrollWheelValue,
+        mouseState.LeftButton, mouseState.MiddleButton, mouseState.RightButton, mouseState.XButton1, mouseState.XButton2));
+
+    public Point ScalePositionUp(Vector2 position)
+    {
+        Vector2 unscaledMousePosition = position;
+        if (screenScale == 1.0f)
+        {
+            float xScale = (float)gameSize.X / renderTargetDestination.Width;
+            unscaledMousePosition.X /= xScale;
+            float yScale = (float)gameSize.Y / renderTargetDestination.Height;
+            unscaledMousePosition.Y /= yScale;
+        }
+        else
+        {
+            unscaledMousePosition *= screenScale;
+            unscaledMousePosition.X += renderTargetDestination.X;
+            unscaledMousePosition.Y += renderTargetDestination.Y;
+        }
+        return unscaledMousePosition.ToPoint();
+    }
+}
