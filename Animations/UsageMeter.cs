@@ -2,7 +2,7 @@
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class UsageMeter : FrameAnimation
+public class UsageMeter : FrameAnimation
 {
 	public override int Threshold => -1;
 	protected override Rectangle[] Frames { get; }

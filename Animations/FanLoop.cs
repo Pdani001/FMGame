@@ -2,7 +2,7 @@
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class FanLoop : FrameAnimation
+public class FanLoop : FrameAnimation
 {
 	public override int Threshold => 33;
 	protected override Rectangle[] Frames { get; }

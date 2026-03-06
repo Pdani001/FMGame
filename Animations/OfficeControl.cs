@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class OfficeControl : TextureAnimation
+public class OfficeControl : TextureAnimation
 {
 	public override int Threshold => -1;
 	protected override Texture2D[] Frames { get; }

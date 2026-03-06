@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class CamButtonText : TextureAnimation
+public class CamButtonText : TextureAnimation
 {
 	public override int Threshold => -1;
 	protected override Texture2D[] Frames { get; }

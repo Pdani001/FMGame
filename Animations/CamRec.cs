@@ -2,7 +2,7 @@
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class CamRec : FrameAnimation
+public class CamRec : FrameAnimation
 {
 	public override int Threshold => 835;
 	protected override Rectangle[] Frames { get; }

@@ -2,7 +2,7 @@
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class SpinnerAnim : FrameAnimation
+public class SpinnerAnim : FrameAnimation
 {
 	public override int Threshold => 33;
 	protected override Rectangle[] Frames { get; }

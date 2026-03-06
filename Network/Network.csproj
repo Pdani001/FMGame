@@ -15,6 +15,7 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
     <RootNamespace>ReFMGame.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <IsPublishable>false</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>

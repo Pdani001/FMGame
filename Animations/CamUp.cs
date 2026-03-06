@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class CamUp : TextureAnimation
+public class CamUp : TextureAnimation
 {
 	public override int Threshold => 23;
 	protected override Texture2D[] Frames { get; }

@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class RightDoorClosing : TextureAnimation
+public class RightDoorClosing : TextureAnimation
 {
 	public override int Threshold => 33;
 	protected override Texture2D[] Frames { get; }

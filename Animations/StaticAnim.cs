@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReFMGame.GameHelper;
 
 namespace ReFMGame.Animations;
-class StaticAnim : TextureAnimation
+public class StaticAnim : TextureAnimation
 {
 	public override int Threshold => 16;
 	protected override Texture2D[] Frames { get; }

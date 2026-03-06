@@ -8,6 +8,7 @@ using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
 using ReFMGame.GameHelper;
 using ReFMGame.Network;
+using ReFMGame.Scenes;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -188,7 +189,7 @@ public class FMGame : GameExtended
         if (IsRestart)
         {
             _screenManager.ClearScreens();
-            _screenManager.ShowScreen(new Scenes.Splash(this));
+            _screenManager.ShowScreen(new Splash(this));
             return;
         }
         Audio.Volume = settings.Volume;
@@ -200,7 +201,7 @@ public class FMGame : GameExtended
         MouseState.SetScreenScale(GetRenderTargetScale(WindowSize, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight));
         _font = Content.Load<BitmapFont>("font/debug");
         _screenManager.ClearScreens();
-        _screenManager.ShowScreen(new Scenes.Splash(this));
+        _screenManager.ShowScreen(new Splash(this));
     }
 
     protected override void UnloadContent()

@@ -30,6 +30,16 @@
     <Content Remove="Network\**" />
     <EmbeddedResource Remove="Network\**" />
     <None Remove="Network\**" />
+
+    <Compile Remove="Animations\**" />
+    <Content Remove="Animations\**" />
+    <EmbeddedResource Remove="Animations\**" />
+    <None Remove="Animations\**" />
+
+    <Compile Remove="Scenes\**" />
+    <Content Remove="Scenes\**" />
+    <EmbeddedResource Remove="Scenes\**" />
+    <None Remove="Scenes\**" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Icon.ico" />
@@ -55,8 +65,10 @@
     <PackageReference Include="NetCoreServer" Version="8.0.7" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Animations\Animations.csproj" />
     <ProjectReference Include="GameHelper\GameHelper.csproj" />
     <ProjectReference Include="Network\Network.csproj" />
+    <ProjectReference Include="Scenes\Scenes.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
