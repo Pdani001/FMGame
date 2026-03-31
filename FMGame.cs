@@ -43,8 +43,6 @@ public class FMGame : GameExtended
     */
     private const int TargetFPS = 60;
 
-
-
     public FMGame() : base(new(1280,720))
     {
         string key = "";
@@ -77,6 +75,7 @@ public class FMGame : GameExtended
         DebugMode = true;
 #endif
         settings = MethodHelper.EnsureJson("settings.json", SettingsContext.Default.Settings);
+        WarningShown = settings.WarningDismissed;
         string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         Version = version[..(version.Length - 2)];
         Debug.WriteLine($"Running version {Version}+{NetworkClient.PROTOCOL_VERSION}");

@@ -29,6 +29,7 @@ namespace ReFMGame.GameHelper
         public NetworkClient Client { get; protected set; }
         public bool DebugMode { get; protected set; } = false;
         public Settings settings { get; protected set; } = new Settings();
+        public bool WarningShown { get; set; } = false;
 
         public Point CurrentWindowSize
         {

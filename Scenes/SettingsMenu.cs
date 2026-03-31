@@ -10,13 +10,13 @@ using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.Screens;
 using MonoGameGum;
 using ReFMGame.GameHelper;
-using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace ReFMGame.Scenes;
 public class SettingsMenu(GameExtended game, MainMenu menu) : GameScreen(game)
 {
+    RenderTarget2D uiTarget;
+
     private KeyboardListener _keyboardListener;
     readonly Rectangle backButton = new(0, 0, 128, 48);
     Vector2 backPos;
@@ -25,29 +25,34 @@ public class SettingsMenu(GameExtended game, MainMenu menu) : GameScreen(game)
     BitmapFont large;
     public override void Draw(GameTime gameTime)
     {
+        GraphicsDevice.SetRenderTarget(uiTarget);
+        GraphicsDevice.Clear(Color.Transparent);
+        game.GumUI.Draw();
+
         GraphicsDevice.SetRenderTarget(game.RenderTarget);
         GraphicsDevice.Clear(Color.Black);
+
         game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);
+
         Color bgcolor = Color.White;
         bgcolor.A = (byte)(255 - menu.BGOpacity);
         game.SpriteBatch.Draw(menu.bg_texture, Vector2.Zero, null, bgcolor, 0, Vector2.Zero , 1, SpriteEffects.None, 0);
 
-        if(!game.UpdateKeyBind)
-            game.SpriteBatch.DrawString(smallB, "Back", backPos, Color.White);
-        game.SpriteBatch.DrawString(large, "Settings", new(64, 224), Color.White);
+        if (!game.UpdateKeyBind)
+        {
+            game.SpriteBatch.DrawString(smallB, "Back", backPos, Color.White, .5f);
+        }
+        game.SpriteBatch.DrawString(large, "Settings", new(64, 224), Color.White, .5f);
 
         game.SpriteBatch.Draw(menu.logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
         if(menu.RareBGM)
-            game.SpriteBatch.DrawString(menu.bmfont, "57", new(79, 190), Color.Yellow);
+            game.SpriteBatch.DrawString(menu.bmfont, "57", new(79, 190), Color.Yellow, .5f);
         if (game.DebugMode && !game.UpdateKeyBind)
         {
-            game.SpriteBatch.DrawRectangle(backButton, new(163, 87, 171));
+            game.SpriteBatch.DrawRectangle(backButton, new(163, 87, 171), layerDepth: .5f);
         }
-        game.SpriteBatch.DrawString(menu.verfont, menu.vertext, menu.verpos, Color.White);
-        game.SpriteBatch.End();
-
-        game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);
-        game.GumUI.Draw();
+        game.SpriteBatch.DrawString(menu.verfont, menu.vertext, menu.verpos, Color.White, .5f);
+        game.SpriteBatch.Draw(uiTarget, Vector2.Zero, null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, .3f);
         game.SpriteBatch.End();
 
         Color staticcolor = Color.White;
@@ -55,6 +60,7 @@ public class SettingsMenu(GameExtended game, MainMenu menu) : GameScreen(game)
         game.SpriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.Additive);
         game.SpriteBatch.Draw(menu.static_animation[menu.static_animation.Index], Vector2.Zero, null, staticcolor, 0, Vector2.Zero , 1, SpriteEffects.None, .4f);
         game.SpriteBatch.End();
+
     }
 
     public override void Update(GameTime gameTime)
@@ -77,6 +83,8 @@ public class SettingsMenu(GameExtended game, MainMenu menu) : GameScreen(game)
     BindKey? update = null;
     public override void LoadContent()
     {
+        uiTarget = new(GraphicsDevice, game.WindowSize.X, game.WindowSize.Y);
+
         _keyboardListener = new KeyboardListener(new KeyboardListenerSettings { RepeatPress = false });
         small = Content.Load<BitmapFont>("font/nunito20");
         smallB = Content.Load<BitmapFont>("font/nunito20b");

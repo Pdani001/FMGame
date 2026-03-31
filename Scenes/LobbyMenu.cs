@@ -18,52 +18,94 @@ using System.Linq;
 namespace ReFMGame.Scenes;
 public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
 {
+    Effect blur;
+    RenderTarget2D uiTarget;
+    WarningScreen warningScreen;
+    public StackPanel panel { get; private set; }
+
     readonly Rectangle backButton = new(0, 0, 128, 48);
+    
     Vector2 backPos;
     BitmapFont small;
     BitmapFont smallB;
-    string InfoText = "Connecting to server...";
+    string InfoText = "";
     public override void Draw(GameTime gameTime)
     {
+        GraphicsDevice.SetRenderTarget(uiTarget);
+        GraphicsDevice.Clear(Color.Transparent);
+        if(warningScreen.panel != null)
+            warningScreen.panel.IsVisible = false;
+        if(panel != null)
+            panel.IsVisible = true;
+        game.GumUI.Draw();
+
         GraphicsDevice.SetRenderTarget(game.RenderTarget);
         GraphicsDevice.Clear(Color.Black);
-        game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);
+        
+        game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied, effect: blur);
         Color bgcolor = Color.White;
         bgcolor.A = (byte)(255 - menu.BGOpacity);
         game.SpriteBatch.Draw(menu.bg_texture, Vector2.Zero, null, bgcolor, 0, Vector2.Zero , 1, SpriteEffects.None, 0f);
 
-        game.SpriteBatch.DrawString(smallB, "Back", backPos, Color.White);
         game.SpriteBatch.Draw(menu.logo, new(68, 50), null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0.5f);
         if(menu.RareBGM)
-            game.SpriteBatch.DrawString(menu.bmfont, "57", new(79, 190), Color.Yellow);
-        if (game.DebugMode)
-        {
-            game.SpriteBatch.DrawRectangle(backButton, new(163, 87, 171));
-        }
-        game.SpriteBatch.DrawString(small, InfoText, new(32, 640), Color.White);
-        game.SpriteBatch.DrawString(menu.verfont, menu.vertext, menu.verpos, Color.White);
-        game.SpriteBatch.End();
+            game.SpriteBatch.DrawString(menu.bmfont, "57", new(79, 190), Color.Yellow, .4f);
+        
+        game.SpriteBatch.DrawString(small, InfoText, new(32, 640), Color.White, .4f);
+        game.SpriteBatch.DrawString(menu.verfont, menu.vertext, menu.verpos, Color.White, .4f);
+        game.SpriteBatch.Draw(uiTarget, Vector2.Zero, null, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, .3f);
 
-        game.SpriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, blendState: BlendState.NonPremultiplied);
-        game.GumUI.Draw();
+        if (IsActive)
+        {
+            game.SpriteBatch.DrawString(smallB, "Back", backPos, Color.White, .4f);
+            if (game.DebugMode)
+                game.SpriteBatch.DrawRectangle(backButton, new(163, 87, 171), layerDepth: .4f);
+        }
         game.SpriteBatch.End();
 
         Color staticcolor = Color.White;
         staticcolor.A = (byte)(255 - menu.StaticOpacity);
-        game.SpriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.Additive);
+        game.SpriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.Additive, effect: blur);
         game.SpriteBatch.Draw(menu.static_animation[menu.static_animation.Index], Vector2.Zero, null, staticcolor, 0, Vector2.Zero , 1, SpriteEffects.None, .4f);
         game.SpriteBatch.End();
     }
 
     public override void Update(GameTime gameTime)
     {
+        if(!game.WarningShown)
+        {
+            ScreenManager.ShowScreen(warningScreen);
+            return;
+        }
         listClick -= (float)(listClick > 0 ? Math.Min(listClick, gameTime.ElapsedGameTime.TotalSeconds) : 0);
         _mouseListener.Update(gameTime);
         if ((backButton.Contains(game.MouseState.Position) && MouseExtended.GetState().WasButtonPressed(MouseButton.Left)) || KeyboardExtended.GetState().WasKeyPressed(Keys.Escape))
         {
-            ScreenManager.CloseScreen();
-            game.Client.Disconnect();
+            PressBack();
         }
+    }
+
+    public void PressBack()
+    {
+        ScreenManager.CloseScreen();
+        game.Client.Disconnect();
+    }
+
+    public void WarningDismissed()
+    {
+        blur.CurrentTechnique = blur.Techniques[0];
+        StartConnection();
+    }
+
+    public override void Initialize()
+    {
+        DrawWhenInactive = true;
+        UpdateWhenInactive = false;
+        warningScreen = new WarningScreen(game, this);
+        panel = new StackPanel();
+        panel.Visual.ChildrenLayout = Gum.Managers.ChildrenLayout.Regular;
+        panel.AddToRoot();
+        base.Initialize();
     }
 
     private float listClick = 0;
@@ -78,6 +120,12 @@ public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
     private Button join;
     public override void LoadContent()
     {
+        blur = game.Content.Load<Effect>("blur");
+        blur.Parameters["texelSize"].SetValue(new Vector2(1f / game.GraphicsDevice.PresentationParameters.BackBufferWidth, 1f / game.GraphicsDevice.PresentationParameters.BackBufferHeight));
+        blur.Parameters["strength"].SetValue(5.2f);
+        blur.CurrentTechnique = blur.Techniques[game.WarningShown ? 0 : 1];
+        uiTarget = new(GraphicsDevice, game.WindowSize.X, game.WindowSize.Y);
+
         game.Client.Connected += Client_Connected;
         game.Client.ConnectFailed += Client_ConnectFailed;
         game.Client.JoinedChannel += Client_JoinedChannel;
@@ -86,15 +134,9 @@ public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
         game.Client.Error += Client_Error;
         game.Client.ServerSecretAccepted += Client_ServerSecretAccepted;
 
-        if (!game.Client.IsConnected)
-            game.Client.Connect();
-        else
+        if (game.WarningShown)
         {
-            InfoText = "";
-            if (game.Client.Channel != null)
-                game.Client.LeaveChannel();
-            else
-                game.Client.RequestChannelList();
+            StartConnection();
         }
 
         var settings = new MouseListenerSettings
@@ -105,7 +147,6 @@ public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
         _mouseListener.MouseDoubleClicked += MouseDoubleClicked;
 
         small = Content.Load<BitmapFont>("font/nunito20");
-        //var test = new RenderingLibrary.Graphics.BitmapFont("font/vui20.fnt");
         smallB = Content.Load<BitmapFont>("font/nunito20b");
         SizeF backSize = smallB.MeasureString("Back");
         backPos = new(64 - backSize.Width / 2, 24 - backSize.Height / 2);
@@ -233,14 +274,38 @@ public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
         create.Click += Create_Click;
         join.Click += Join_Click;
 
-        password.AddToRoot();
-        lobbylist.AddToRoot();
-        join.AddToRoot();
-        create.AddToRoot();
-        refresh.AddToRoot();
-        nickname.AddToRoot();
-        channelname.AddToRoot();
+        //password.AddToRoot();
+        panel.AddChild(password);
+        //lobbylist.AddToRoot();
+        panel.AddChild(lobbylist);
+        //join.AddToRoot();
+        panel.AddChild(join);
+        //create.AddToRoot();
+        panel.AddChild(create);
+        //refresh.AddToRoot();
+        panel.AddChild(refresh);
+        //nickname.AddToRoot();
+        panel.AddChild(nickname);
+        //channelname.AddToRoot();
+        panel.AddChild(channelname);
         base.LoadContent();
+    }
+
+    private void StartConnection()
+    {
+        if (!game.Client.IsConnected)
+        {
+            InfoText = "Connecting to server...";
+            game.Client.Connect();
+        }
+        else
+        {
+            InfoText = "";
+            if (game.Client.Channel != null)
+                game.Client.LeaveChannel();
+            else
+                game.Client.RequestChannelList();
+        }
     }
 
     private void Password_KeyDown(object _, KeyEventArgs e)
@@ -347,13 +412,14 @@ public class LobbyMenu(GameExtended game, MainMenu menu) : GameScreen(game)
         create.Click -= Create_Click;
         join.Click -= Join_Click;
 
-        password.RemoveFromRoot();
-        lobbylist.RemoveFromRoot();
-        join.RemoveFromRoot();
-        create.RemoveFromRoot();
-        refresh.RemoveFromRoot();
-        nickname.RemoveFromRoot();
-        channelname.RemoveFromRoot();
+        //password.RemoveFromRoot();
+        //lobbylist.RemoveFromRoot();
+        //join.RemoveFromRoot();
+        //create.RemoveFromRoot();
+        //refresh.RemoveFromRoot();
+        //nickname.RemoveFromRoot();
+        //channelname.RemoveFromRoot();
+        panel.RemoveFromRoot();
         base.UnloadContent();
     }
 

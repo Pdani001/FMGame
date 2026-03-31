@@ -12,7 +12,8 @@ namespace ReFMGame.Scenes;
 public class Splash(GameExtended game) : GameScreen(game)
 {
     private readonly List<Texture2D> textures = [];
-    private readonly Rectangle GameView = new(new(0, 0), game.WindowSize);
+    private readonly List<Rectangle> positions = [];
+    private readonly Rectangle GameView = new(Point.Zero, game.WindowSize);
     private const float MaxWidth = 1200f;
     private int Index = 0;
     private bool Forward = false;
@@ -27,19 +28,9 @@ public class Splash(GameExtended game) : GameScreen(game)
         GraphicsDevice.SetRenderTarget(game.RenderTarget);
         GraphicsDevice.Clear(Color.Black);
         game.SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
-        Texture2D text = textures[Index];
-        int w = text.Width;
-        int h = text.Height;
-        if(w > MaxWidth)
-        {
-            h = (int)(MaxWidth / w * h);
-            w = (int)MaxWidth;
-        }
-        int x = (int)((game.WindowSize.X/2f) - (w/2f));
-        int y = (int)((game.WindowSize.Y/2f) - (h/2f));
         Color color = Color.White;
         color.A = (byte)Alpha;
-        game.SpriteBatch.Draw(text, new Rectangle(x,y,w,h), color);
+        game.SpriteBatch.Draw(textures[Index], positions[Index], color);
         game.SpriteBatch.End();
     }
 
@@ -106,5 +97,20 @@ public class Splash(GameExtended game) : GameScreen(game)
         Texture2D mglogo = Content.Load<Texture2D>("MonoGameLogo-small");
         textures.Add(fmload);
         textures.Add(mglogo);
+
+        textures.ForEach(texture =>
+        {
+            float scale = MaxWidth / texture.Width;
+            int w = texture.Width;
+            int h = texture.Height;
+            if (w > MaxWidth)
+            {
+                h = (int)(MaxWidth / w * h);
+                w = (int)MaxWidth;
+            }
+            int x = (game.WindowSize.X - w) / 2;
+            int y = (game.WindowSize.Y - h) / 2;
+            positions.Add(new Rectangle(x, y, w, h));
+        });
     }
 }

@@ -15,6 +15,7 @@ namespace ReFMGame.GameHelper
         public int ServerIndex { get; set; } = 0;
         public string CustomAddress { get; set; } = "";
         public string Nickname { get; set; } = "";
+        public bool WarningDismissed { get; set; } = false;
     }
 
     [JsonSourceGenerationOptions(
